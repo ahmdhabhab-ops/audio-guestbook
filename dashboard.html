@@ -25,6 +25,7 @@
       <button type="button" class="btn-text" id="copyBtn">Copy</button>
     </div>
 
+    <p class="status" id="pendingBanner" hidden>Your guestbook is pending admin approval. Guests can't record messages yet — you'll be notified once it's approved.</p>
     <p class="status" id="statusText"></p>
 
     <table class="data-table" id="messagesTable" hidden>
@@ -45,6 +46,7 @@
   const guestLinkEl = document.getElementById('guestLink');
   const copyBtn = document.getElementById('copyBtn');
   const statusText = document.getElementById('statusText');
+  const pendingBanner = document.getElementById('pendingBanner');
   const messagesTable = document.getElementById('messagesTable');
   const messagesBody = document.getElementById('messagesBody');
   const logoutBtn = document.getElementById('logoutBtn');
@@ -65,7 +67,7 @@
 
     const { data: event, error: eventError } = await supabaseClient
       .from('ag_events')
-      .select('id, couple_name, slug, created_at')
+      .select('id, couple_name, slug, created_at, status')
       .eq('owner_id', session.user.id)
       .single();
 
@@ -78,6 +80,10 @@
 
     eventTitle.textContent = event.couple_name;
     eventMeta.textContent = 'Created ' + new Date(event.created_at).toLocaleDateString();
+
+    if (event.status !== 'approved'){
+      pendingBanner.hidden = false;
+    }
 
     const guestUrl = `${location.origin}${location.pathname.replace('dashboard.html','')}guest.html?event=${event.slug}`;
     guestLinkEl.textContent = guestUrl;
