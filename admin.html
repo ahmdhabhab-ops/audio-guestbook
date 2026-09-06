@@ -39,7 +39,25 @@
     location.href = 'login.html';
   });
 
+  async function setStatus(eventId, newStatus){
+    const { error } = await supabaseClient
+      .from('ag_events')
+      .update({ status: newStatus })
+      .eq('id', eventId);
+
+    if (error){
+      window.alert('Could not update status: ' + error.message);
+      return;
+    }
+
+    init();
+  }
+
   async function init(){
+    eventsContainer.innerHTML = '';
+    statusText.textContent = '';
+    statusText.className = 'status';
+
     const { data: { session } } = await supabaseClient.auth.getSession();
     if (!session){
       location.href = 'login.html';
@@ -60,7 +78,7 @@
 
     const { data: events, error: eventsError } = await supabaseClient
       .from('ag_events')
-      .select('id, couple_name, slug, created_at')
+      .select('id, couple_name, slug, created_at, status')
       .order('created_at', { ascending: false });
 
     if (eventsError){
@@ -74,7 +92,9 @@
       return;
     }
 
-    summaryText.textContent = `${events.length} client${events.length === 1 ? '' : 's'}`;
+    const pendingCount = events.filter(function(ev){ return ev.status === 'pending'; }).length;
+    summaryText.textContent = `${events.length} client${events.length === 1 ? '' : 's'}` +
+      (pendingCount > 0 ? ` · ${pendingCount} awaiting approval` : '');
 
     const { data: allMessages, error: messagesError } = await supabaseClient
       .from('ag_messages')
@@ -97,16 +117,66 @@
       const group = document.createElement('div');
       group.className = 'event-group';
 
+      const titleRow = document.createElement('div');
+      titleRow.style.display = 'flex';
+      titleRow.style.alignItems = 'center';
+      titleRow.style.gap = '10px';
+      titleRow.style.flexWrap = 'wrap';
+
       const title = document.createElement('p');
       title.className = 'event-group-title';
+      title.style.margin = '0';
       title.textContent = ev.couple_name;
+
+      const badge = document.createElement('span');
+      badge.textContent = ev.status;
+      badge.style.fontSize = '0.72rem';
+      badge.style.fontWeight = '600';
+      badge.style.padding = '3px 10px';
+      badge.style.borderRadius = '999px';
+      badge.style.textTransform = 'capitalize';
+      if (ev.status === 'approved'){
+        badge.style.background = '#E9F3EA';
+        badge.style.color = '#3C7A45';
+      } else if (ev.status === 'rejected'){
+        badge.style.background = '#F7E7E5';
+        badge.style.color = '#B4534B';
+      } else {
+        badge.style.background = 'var(--gold-soft)';
+        badge.style.color = 'var(--plum-deep)';
+      }
+
+      titleRow.appendChild(title);
+      titleRow.appendChild(badge);
+
+      if (ev.status !== 'approved'){
+        const approveBtn = document.createElement('button');
+        approveBtn.type = 'button';
+        approveBtn.className = 'btn-text';
+        approveBtn.style.width = 'auto';
+        approveBtn.style.padding = '2px 4px';
+        approveBtn.textContent = 'Approve';
+        approveBtn.addEventListener('click', function(){ setStatus(ev.id, 'approved'); });
+        titleRow.appendChild(approveBtn);
+      }
+
+      if (ev.status !== 'rejected'){
+        const rejectBtn = document.createElement('button');
+        rejectBtn.type = 'button';
+        rejectBtn.className = 'btn-text';
+        rejectBtn.style.width = 'auto';
+        rejectBtn.style.padding = '2px 4px';
+        rejectBtn.textContent = 'Reject';
+        rejectBtn.addEventListener('click', function(){ setStatus(ev.id, 'rejected'); });
+        titleRow.appendChild(rejectBtn);
+      }
 
       const meta = document.createElement('p');
       meta.className = 'event-group-meta';
       const msgs = messagesByEvent[ev.id] || [];
       meta.textContent = `/${ev.slug} · ${msgs.length} message${msgs.length === 1 ? '' : 's'} · created ${new Date(ev.created_at).toLocaleDateString()}`;
 
-      group.appendChild(title);
+      group.appendChild(titleRow);
       group.appendChild(meta);
 
       if (msgs.length > 0){
