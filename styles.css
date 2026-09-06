@@ -143,6 +143,83 @@ table.data-table audio{ height:32px; max-width:220px; }
 }
 .event-group-meta{ font-size:0.78rem; color:var(--ink); opacity:0.5; margin: 0 0 12px; }
 
+/* --- Admin: client cards (replaces raw tables, mobile-friendly) --- */
+.client-card{
+  background: var(--ivory);
+  border: 1px solid var(--line);
+  border-radius: 18px;
+  padding: 20px 22px;
+  margin-bottom: 18px;
+}
+.client-card-header{
+  display:flex;
+  flex-wrap: wrap;
+  align-items:center;
+  gap: 10px;
+  margin-bottom: 2px;
+}
+.client-card-title{
+  font-family:'Fraunces', serif;
+  font-weight:600;
+  font-size: 1.1rem;
+  color: var(--plum-deep);
+  margin: 0;
+}
+.status-pill{
+  font-size: 0.72rem;
+  font-weight:600;
+  padding: 3px 11px;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+.status-pill.pending{ background: var(--gold-soft); color: var(--plum-deep); }
+.status-pill.approved{ background: #E9F3EA; color: #3C7A45; }
+.status-pill.rejected{ background: #F7E7E5; color: var(--danger); }
+
+.client-card-meta{
+  font-size: 0.78rem;
+  color: var(--ink);
+  opacity: 0.5;
+  margin: 0 0 14px;
+}
+
+.client-actions{ display:flex; gap: 8px; margin: 0 0 14px; }
+.action-btn{
+  font-family:'Manrope', sans-serif;
+  font-size: 0.78rem;
+  font-weight:600;
+  padding: 6px 14px;
+  border-radius: 999px;
+  border: 1px solid;
+  background: none;
+  cursor:pointer;
+}
+.action-btn.approve{ color:#3C7A45; border-color:#9FCBA5; }
+.action-btn.approve:hover{ background:#E9F3EA; }
+.action-btn.reject{ color: var(--danger); border-color:#E3B3AE; }
+.action-btn.reject:hover{ background:#F7E7E5; }
+
+.message-list{ border-top: 1px solid var(--line); }
+.message-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--line);
+  flex-wrap: wrap;
+}
+.message-who{ display:flex; flex-direction:column; gap:2px; min-width: 90px; }
+.message-guest{ font-size:0.9rem; font-weight:600; color: var(--ink); }
+.message-time{ font-size:0.72rem; color: var(--ink); opacity:0.5; }
+.message-row audio{ height: 34px; max-width: 240px; flex:1 1 200px; }
+
+@media (max-width: 480px){
+  .client-card{ padding: 16px 16px; }
+  .message-row{ flex-direction: column; align-items:flex-start; }
+  .message-row audio{ width:100%; max-width:none; }
+}
+
 .topbar{
   width:100%; max-width:720px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px;
 }
