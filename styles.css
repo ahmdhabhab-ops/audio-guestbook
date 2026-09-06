@@ -1,0 +1,155 @@
+:root{
+  --ivory: #FBF7F2;
+  --card: #FFFFFF;
+  --ink: #2C2430;
+  --plum: #6B4E71;
+  --plum-deep: #4C3549;
+  --mauve-soft: #EFE3EC;
+  --gold: #B98B4E;
+  --gold-soft: #E9D9BC;
+  --line: #E7DEE2;
+  --danger: #B4534B;
+}
+
+*{ box-sizing: border-box; }
+
+html,body{ margin:0; padding:0; min-height:100%; }
+
+body{
+  font-family:'Manrope', sans-serif;
+  color: var(--ink);
+  background: radial-gradient(circle at 50% -10%, #FDFAF7 0%, var(--ivory) 45%, #F6EEF4 100%);
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding: 32px 16px;
+}
+
+.card{
+  width:100%;
+  max-width: 440px;
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-radius: 28px;
+  box-shadow: 0 24px 60px rgba(76, 53, 73, 0.10);
+  padding: 44px 36px;
+  text-align:center;
+  margin: auto 0;
+}
+
+.card.wide{ max-width: 720px; text-align:left; }
+
+h1.heading{
+  font-family:'Fraunces', serif;
+  font-weight:600;
+  font-size: clamp(1.5rem, 4vw, 1.9rem);
+  color: var(--plum-deep);
+  margin: 0 0 8px;
+}
+
+.subtext{
+  font-size: 0.95rem;
+  line-height:1.55;
+  color: var(--ink);
+  opacity: 0.62;
+  margin: 0 0 26px;
+}
+
+.field{ text-align:left; margin-bottom: 16px; }
+.field-label{
+  display:block;
+  font-size: 0.78rem;
+  color: var(--ink);
+  opacity: 0.6;
+  margin-bottom: 6px;
+}
+.field-input{
+  width:100%;
+  font-family:'Manrope', sans-serif;
+  font-size: 0.95rem;
+  padding: 11px 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line);
+  background: var(--ivory);
+  color: var(--ink);
+  outline:none;
+  transition: border-color .2s ease;
+}
+.field-input:focus{ border-color: var(--plum); }
+
+.btn{
+  font-family:'Manrope', sans-serif;
+  font-weight:600;
+  font-size: 0.95rem;
+  border-radius: 999px;
+  padding: 13px 22px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap: 9px;
+  cursor:pointer;
+  border: 1px solid transparent;
+  width:100%;
+  transition: transform .15s ease, background .2s ease, color .2s ease, border-color .2s ease;
+}
+.btn-primary{ background: var(--plum); color:#fff; }
+.btn-primary:hover:not(:disabled){ background: var(--plum-deep); transform: translateY(-1px); }
+.btn-outline{ background: transparent; color: var(--plum-deep); border-color: var(--gold); }
+.btn-outline:hover:not(:disabled){ background: var(--gold-soft); }
+.btn-text{
+  background:none; border:none; color: var(--plum-deep);
+  text-decoration: underline; text-underline-offset:3px; font-size:0.88rem; padding:6px; width:auto;
+}
+.btn:disabled{ background: var(--line); border-color: var(--line); color:#9C919E; cursor:not-allowed; transform:none; }
+
+.status{
+  margin-top: 16px;
+  font-size: 0.85rem;
+  min-height: 1.2em;
+}
+.status.error{ color: var(--danger); }
+.status.success{ color: var(--plum-deep); }
+
+.footer-link{ margin-top: 22px; font-size: 0.88rem; color: var(--ink); opacity:0.7; }
+.footer-link a{ color: var(--plum-deep); font-weight:600; text-decoration:none; }
+.footer-link a:hover{ text-decoration:underline; }
+
+.link-box{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  background: var(--ivory);
+  border: 1px dashed var(--gold-soft);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  color: var(--plum-deep);
+  word-break: break-all;
+}
+.link-box button{ flex-shrink:0; }
+
+table.data-table{ width:100%; border-collapse: collapse; font-size: 0.9rem; }
+table.data-table th{
+  text-align:left; font-size:0.75rem; letter-spacing:0.04em; color: var(--ink); opacity:0.5;
+  padding: 8px 10px; border-bottom: 1px solid var(--line);
+}
+table.data-table td{ padding: 12px 10px; border-bottom: 1px solid var(--line); vertical-align:middle; }
+table.data-table audio{ height:32px; max-width:220px; }
+
+.event-group{ margin-bottom: 28px; }
+.event-group-title{
+  font-family:'Fraunces', serif; font-weight:600; font-size:1.1rem; color: var(--plum-deep); margin: 0 0 4px;
+}
+.event-group-meta{ font-size:0.78rem; color:var(--ink); opacity:0.5; margin: 0 0 12px; }
+
+.topbar{
+  width:100%; max-width:720px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px;
+}
+.topbar .brand{ font-family:'Fraunces', serif; font-weight:600; color:var(--plum-deep); font-size:1.1rem; }
+
+*:focus-visible{ outline: 2px solid var(--plum); outline-offset:3px; border-radius:4px; }
+
+@media (max-width: 480px){
+  .card{ padding: 34px 22px; }
+}

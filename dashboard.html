@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard — Audio Guestbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <span class="brand">Audio Guestbook</span>
+    <button type="button" class="btn-text" id="logoutBtn" style="width:auto;">Log out</button>
+  </div>
+
+  <div class="card wide">
+    <h1 class="heading" id="eventTitle">Loading…</h1>
+    <p class="subtext" id="eventMeta"></p>
+
+    <div class="link-box" id="linkBox" style="margin-bottom:26px;" hidden>
+      <span id="guestLink"></span>
+      <button type="button" class="btn-text" id="copyBtn">Copy</button>
+    </div>
+
+    <p class="status" id="statusText"></p>
+
+    <table class="data-table" id="messagesTable" hidden>
+      <thead>
+        <tr><th>Guest</th><th>When</th><th>Message</th></tr>
+      </thead>
+      <tbody id="messagesBody"></tbody>
+    </table>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+(function(){
+  const eventTitle = document.getElementById('eventTitle');
+  const eventMeta = document.getElementById('eventMeta');
+  const linkBox = document.getElementById('linkBox');
+  const guestLinkEl = document.getElementById('guestLink');
+  const copyBtn = document.getElementById('copyBtn');
+  const statusText = document.getElementById('statusText');
+  const messagesTable = document.getElementById('messagesTable');
+  const messagesBody = document.getElementById('messagesBody');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  const STORAGE_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
+
+  logoutBtn.addEventListener('click', async function(){
+    await supabaseClient.auth.signOut();
+    location.href = 'login.html';
+  });
+
+  async function init(){
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session){
+      location.href = 'login.html';
+      return;
+    }
+
+    const { data: event, error: eventError } = await supabaseClient
+      .from('ag_events')
+      .select('id, couple_name, slug, created_at')
+      .eq('owner_id', session.user.id)
+      .single();
+
+    if (eventError || !event){
+      eventTitle.textContent = 'No event found';
+      statusText.className = 'status error';
+      statusText.textContent = "We couldn't find a guestbook for this account.";
+      return;
+    }
+
+    eventTitle.textContent = event.couple_name;
+    eventMeta.textContent = 'Created ' + new Date(event.created_at).toLocaleDateString();
+
+    const guestUrl = `${location.origin}${location.pathname.replace('dashboard.html','')}guest.html?event=${event.slug}`;
+    guestLinkEl.textContent = guestUrl;
+    linkBox.hidden = false;
+
+    copyBtn.addEventListener('click', function(){
+      navigator.clipboard.writeText(guestUrl).then(function(){
+        copyBtn.textContent = 'Copied!';
+        setTimeout(function(){ copyBtn.textContent = 'Copy'; }, 1500);
+      });
+    });
+
+    const { data: messages, error: messagesError } = await supabaseClient
+      .from('ag_messages')
+      .select('guest_name, audio_path, created_at')
+      .eq('event_id', event.id)
+      .order('created_at', { ascending: false });
+
+    if (messagesError){
+      statusText.className = 'status error';
+      statusText.textContent = messagesError.message;
+      return;
+    }
+
+    if (!messages || messages.length === 0){
+      statusText.textContent = 'No messages yet — share your guest link to start collecting voice messages.';
+      return;
+    }
+
+    messages.forEach(function(m){
+      const tr = document.createElement('tr');
+
+      const nameTd = document.createElement('td');
+      nameTd.textContent = m.guest_name;
+
+      const timeTd = document.createElement('td');
+      timeTd.textContent = new Date(m.created_at).toLocaleString();
+
+      const audioTd = document.createElement('td');
+      const audioEl = document.createElement('audio');
+      audioEl.controls = true;
+      audioEl.src = STORAGE_BASE + m.audio_path;
+      audioTd.appendChild(audioEl);
+
+      tr.appendChild(nameTd);
+      tr.appendChild(timeTd);
+      tr.appendChild(audioTd);
+      messagesBody.appendChild(tr);
+    });
+
+    messagesTable.hidden = false;
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>

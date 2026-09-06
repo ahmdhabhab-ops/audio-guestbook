@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sign Up — Audio Guestbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="card">
+    <h1 class="heading">Create your guestbook</h1>
+    <p class="subtext">Set up your event and get a link to send to your guests.</p>
+
+    <form id="signupForm">
+      <div class="field">
+        <label class="field-label" for="coupleName">Couple / event name</label>
+        <input type="text" id="coupleName" class="field-input" placeholder="e.g. Sara & James" required>
+      </div>
+      <div class="field">
+        <label class="field-label" for="email">Email</label>
+        <input type="email" id="email" class="field-input" placeholder="you@email.com" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label class="field-label" for="password">Password</label>
+        <input type="password" id="password" class="field-input" placeholder="At least 6 characters" required minlength="6" autocomplete="new-password">
+      </div>
+      <button type="submit" id="submitBtn" class="btn btn-primary">Create account</button>
+    </form>
+
+    <p class="status" id="statusText"></p>
+
+    <div id="successBox" hidden>
+      <p class="subtext" style="margin-top:20px;">Your guest link is ready — share it with your guests:</p>
+      <div class="link-box">
+        <span id="guestLink"></span>
+        <button type="button" class="btn-text" id="copyBtn">Copy</button>
+      </div>
+      <a href="dashboard.html" class="btn btn-primary" style="margin-top:20px; text-decoration:none; display:block;">Go to my dashboard</a>
+    </div>
+
+    <p class="footer-link">Already have an account? <a href="login.html">Log in</a></p>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+(function(){
+  const form = document.getElementById('signupForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const statusText = document.getElementById('statusText');
+  const successBox = document.getElementById('successBox');
+  const guestLinkEl = document.getElementById('guestLink');
+  const copyBtn = document.getElementById('copyBtn');
+
+  function slugify(text){
+    return text
+      .toString()
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9\s-]/g, '')
+      .replace(/\s+/g, '-')
+      .replace(/-+/g, '-')
+      .slice(0, 40);
+  }
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    submitBtn.disabled = true;
+    statusText.className = 'status';
+    statusText.textContent = 'Creating your account…';
+
+    const coupleName = document.getElementById('coupleName').value.trim();
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    const { data: signUpData, error: signUpError } = await supabaseClient.auth.signUp({ email, password });
+
+    if (signUpError){
+      statusText.className = 'status error';
+      statusText.textContent = signUpError.message;
+      submitBtn.disabled = false;
+      return;
+    }
+
+    if (!signUpData.session){
+      statusText.className = 'status success';
+      statusText.textContent = 'Account created! Please check your email to confirm, then log in.';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const baseSlug = slugify(coupleName) || 'guestbook';
+    let attempt = 0;
+    let inserted = null;
+    let lastError = null;
+
+    while (attempt < 5 && !inserted){
+      const candidateSlug = attempt === 0 ? baseSlug : `${baseSlug}-${Math.floor(1000 + Math.random() * 9000)}`;
+      const { data, error } = await supabaseClient
+        .from('ag_events')
+        .insert({ owner_id: signUpData.user.id, couple_name: coupleName, slug: candidateSlug })
+        .select()
+        .single();
+
+      if (!error){
+        inserted = data;
+      } else {
+        lastError = error;
+      }
+      attempt++;
+    }
+
+    if (!inserted){
+      statusText.className = 'status error';
+      statusText.textContent = (lastError && lastError.message) || 'Could not create your event. Please try again.';
+      submitBtn.disabled = false;
+      return;
+    }
+
+    const guestUrl = `${location.origin}${location.pathname.replace('signup.html','')}guest.html?event=${inserted.slug}`;
+    guestLinkEl.textContent = guestUrl;
+    statusText.textContent = '';
+    form.hidden = true;
+    successBox.hidden = false;
+
+    copyBtn.addEventListener('click', function(){
+      navigator.clipboard.writeText(guestUrl).then(function(){
+        copyBtn.textContent = 'Copied!';
+        setTimeout(function(){ copyBtn.textContent = 'Copy'; }, 1500);
+      });
+    });
+  });
+})();
+</script>
+
+</body>
+</html>

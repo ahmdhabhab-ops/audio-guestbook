@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin — Audio Guestbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="topbar">
+    <span class="brand">Audio Guestbook — Admin</span>
+    <button type="button" class="btn-text" id="logoutBtn" style="width:auto;">Log out</button>
+  </div>
+
+  <div class="card wide">
+    <h1 class="heading">All clients</h1>
+    <p class="subtext" id="summaryText"></p>
+    <p class="status" id="statusText"></p>
+    <div id="eventsContainer"></div>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+(function(){
+  const summaryText = document.getElementById('summaryText');
+  const statusText = document.getElementById('statusText');
+  const eventsContainer = document.getElementById('eventsContainer');
+  const logoutBtn = document.getElementById('logoutBtn');
+
+  const STORAGE_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
+
+  logoutBtn.addEventListener('click', async function(){
+    await supabaseClient.auth.signOut();
+    location.href = 'login.html';
+  });
+
+  async function init(){
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if (!session){
+      location.href = 'login.html';
+      return;
+    }
+
+    const { data: adminRow } = await supabaseClient
+      .from('ag_admins')
+      .select('user_id')
+      .eq('user_id', session.user.id)
+      .maybeSingle();
+
+    if (!adminRow){
+      statusText.className = 'status error';
+      statusText.textContent = "This account doesn't have admin access.";
+      return;
+    }
+
+    const { data: events, error: eventsError } = await supabaseClient
+      .from('ag_events')
+      .select('id, couple_name, slug, created_at')
+      .order('created_at', { ascending: false });
+
+    if (eventsError){
+      statusText.className = 'status error';
+      statusText.textContent = eventsError.message;
+      return;
+    }
+
+    if (!events || events.length === 0){
+      summaryText.textContent = 'No clients yet.';
+      return;
+    }
+
+    summaryText.textContent = `${events.length} client${events.length === 1 ? '' : 's'}`;
+
+    const { data: allMessages, error: messagesError } = await supabaseClient
+      .from('ag_messages')
+      .select('event_id, guest_name, audio_path, created_at')
+      .order('created_at', { ascending: false });
+
+    if (messagesError){
+      statusText.className = 'status error';
+      statusText.textContent = messagesError.message;
+      return;
+    }
+
+    const messagesByEvent = {};
+    (allMessages || []).forEach(function(m){
+      if (!messagesByEvent[m.event_id]) messagesByEvent[m.event_id] = [];
+      messagesByEvent[m.event_id].push(m);
+    });
+
+    events.forEach(function(ev){
+      const group = document.createElement('div');
+      group.className = 'event-group';
+
+      const title = document.createElement('p');
+      title.className = 'event-group-title';
+      title.textContent = ev.couple_name;
+
+      const meta = document.createElement('p');
+      meta.className = 'event-group-meta';
+      const msgs = messagesByEvent[ev.id] || [];
+      meta.textContent = `/${ev.slug} · ${msgs.length} message${msgs.length === 1 ? '' : 's'} · created ${new Date(ev.created_at).toLocaleDateString()}`;
+
+      group.appendChild(title);
+      group.appendChild(meta);
+
+      if (msgs.length > 0){
+        const table = document.createElement('table');
+        table.className = 'data-table';
+        table.innerHTML = '<thead><tr><th>Guest</th><th>When</th><th>Message</th></tr></thead>';
+        const tbody = document.createElement('tbody');
+
+        msgs.forEach(function(m){
+          const tr = document.createElement('tr');
+
+          const nameTd = document.createElement('td');
+          nameTd.textContent = m.guest_name;
+
+          const timeTd = document.createElement('td');
+          timeTd.textContent = new Date(m.created_at).toLocaleString();
+
+          const audioTd = document.createElement('td');
+          const audioEl = document.createElement('audio');
+          audioEl.controls = true;
+          audioEl.src = STORAGE_BASE + m.audio_path;
+          audioTd.appendChild(audioEl);
+
+          tr.appendChild(nameTd);
+          tr.appendChild(timeTd);
+          tr.appendChild(audioTd);
+          tbody.appendChild(tr);
+        });
+
+        table.appendChild(tbody);
+        group.appendChild(table);
+      }
+
+      eventsContainer.appendChild(group);
+    });
+  }
+
+  init();
+})();
+</script>
+
+</body>
+</html>

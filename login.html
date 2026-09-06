@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Log In — Audio Guestbook</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+  <div class="card">
+    <h1 class="heading">Welcome back</h1>
+    <p class="subtext">Log in to see your guests' messages.</p>
+
+    <form id="loginForm">
+      <div class="field">
+        <label class="field-label" for="email">Email</label>
+        <input type="email" id="email" class="field-input" placeholder="you@email.com" required autocomplete="email">
+      </div>
+      <div class="field">
+        <label class="field-label" for="password">Password</label>
+        <input type="password" id="password" class="field-input" placeholder="Your password" required autocomplete="current-password">
+      </div>
+      <button type="submit" id="submitBtn" class="btn btn-primary">Log in</button>
+    </form>
+
+    <p class="status" id="statusText"></p>
+
+    <p class="footer-link">New here? <a href="signup.html">Create your guestbook</a></p>
+  </div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="supabase-client.js"></script>
+<script>
+(function(){
+  const form = document.getElementById('loginForm');
+  const submitBtn = document.getElementById('submitBtn');
+  const statusText = document.getElementById('statusText');
+
+  form.addEventListener('submit', async function(e){
+    e.preventDefault();
+    submitBtn.disabled = true;
+    statusText.className = 'status';
+    statusText.textContent = 'Logging in…';
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if (error){
+      statusText.className = 'status error';
+      statusText.textContent = error.message;
+      submitBtn.disabled = false;
+      return;
+    }
+
+    location.href = 'dashboard.html';
+  });
+})();
+</script>
+
+</body>
+</html>
