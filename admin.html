@@ -3,150 +3,86 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Admin — Audio Guestbook</title>
+<title>Audio Guestbook</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<style>
+  :root{
+    --ivory: #FBF7F2; --card: #FFFFFF; --ink: #2C2430; --plum: #6B4E71; --plum-deep: #4C3549;
+    --mauve-soft: #EFE3EC; --gold: #B98B4E; --gold-soft: #E9D9BC; --line: #E7DEE2;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; min-height:100%; }
+  body{
+    font-family:'Manrope', sans-serif; color: var(--ink);
+    background: radial-gradient(circle at 50% -10%, #FDFAF7 0%, var(--ivory) 45%, #F6EEF4 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding: 32px 16px;
+  }
+  .card{
+    width:100%; max-width:440px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 28px; box-shadow: 0 24px 60px rgba(76, 53, 73, 0.10); padding: 48px 36px 40px; text-align:center;
+  }
+  .badge{
+    width: 84px; height: 84px; margin: 0 auto 28px; border-radius: 50%;
+    border: 1px solid var(--gold-soft); display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .badge::before{ content:""; position:absolute; inset: 6px; border-radius:50%; border: 1px solid var(--line); }
+  .badge svg{ width:28px; height:28px; position:relative; z-index:1; }
+  h1.heading{
+    font-family:'Fraunces', serif; font-weight:600; font-style:normal;
+    font-size: clamp(1.9rem, 5vw, 2.35rem); color: var(--plum-deep); margin: 0; line-height:1.15;
+  }
+  .tagline{
+    font-family:'Fraunces', serif; font-weight:400; font-style:italic;
+    font-size: clamp(1rem, 2.6vw, 1.15rem); color: var(--ink); margin: 6px 0 0; letter-spacing: 0.01em;
+  }
+  .ornament{ width: 64px; margin: 18px auto 20px; display:block; }
+  .ornament svg{ width:100%; height:auto; display:block; }
+  .subtext{
+    font-size: 0.95rem; line-height:1.55; color: var(--ink); opacity: 0.62; max-width: 32ch; margin: 0 auto 32px;
+  }
+  .btn{
+    font-family:'Manrope', sans-serif; font-weight:600; font-size: 0.95rem; border-radius: 999px; padding: 14px 24px;
+    display:flex; align-items:center; justify-content:center; gap: 9px; cursor:pointer; border: 1px solid transparent;
+    transition: transform .15s ease, background .2s ease, color .2s ease, border-color .2s ease;
+    text-decoration:none; width:100%;
+  }
+  .btn-primary{ background: var(--plum); color: #fff; margin-bottom:12px; }
+  .btn-primary:hover{ background: var(--plum-deep); transform: translateY(-1px); }
+  .btn-outline{ background: transparent; color: var(--plum-deep); border-color: var(--gold); }
+  .btn-outline:hover{ background: var(--gold-soft); }
+  *:focus-visible{ outline: 2px solid var(--plum); outline-offset: 3px; border-radius: 4px; }
+  @media (max-width: 420px){ .card{ padding: 40px 22px 32px; } }
+</style>
 </head>
 <body>
 
-  <div class="topbar">
-    <span class="brand">Audio Guestbook — Admin</span>
-    <button type="button" class="btn-text" id="logoutBtn" style="width:auto;">Log out</button>
-  </div>
+  <main class="card">
+    <div class="badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#B98B4E" stroke-width="1.4">
+        <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
+        <path d="M6.5 11.5V12a5.5 5.5 0 0 0 11 0v-.5"/>
+        <path d="M12 17.5V21"/>
+      </svg>
+    </div>
 
-  <div class="card wide">
-    <h1 class="heading">All clients</h1>
-    <p class="subtext" id="summaryText"></p>
-    <p class="status" id="statusText"></p>
-    <div id="eventsContainer"></div>
-  </div>
+    <h1 class="heading">Audio Guestbook</h1>
+    <p class="tagline">Voice messages, kept forever</p>
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
-<script src="supabase-client.js"></script>
-<script>
-(function(){
-  const summaryText = document.getElementById('summaryText');
-  const statusText = document.getElementById('statusText');
-  const eventsContainer = document.getElementById('eventsContainer');
-  const logoutBtn = document.getElementById('logoutBtn');
+    <div class="ornament" aria-hidden="true">
+      <svg viewBox="0 0 64 8" xmlns="http://www.w3.org/2000/svg">
+        <line x1="0" y1="4" x2="26" y2="4" stroke="#B98B4E" stroke-width="1"/>
+        <circle cx="32" cy="4" r="2.5" fill="#B98B4E"/>
+        <line x1="38" y1="4" x2="64" y2="4" stroke="#B98B4E" stroke-width="1"/>
+      </svg>
+    </div>
 
-  const STORAGE_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
+    <p class="subtext">Collect heartfelt voice messages from your guests — one elegant link for every event.</p>
 
-  logoutBtn.addEventListener('click', async function(){
-    await supabaseClient.auth.signOut();
-    location.href = 'login.html';
-  });
-
-  async function init(){
-    const { data: { session } } = await supabaseClient.auth.getSession();
-    if (!session){
-      location.href = 'login.html';
-      return;
-    }
-
-    const { data: adminRow } = await supabaseClient
-      .from('ag_admins')
-      .select('user_id')
-      .eq('user_id', session.user.id)
-      .maybeSingle();
-
-    if (!adminRow){
-      statusText.className = 'status error';
-      statusText.textContent = "This account doesn't have admin access.";
-      return;
-    }
-
-    const { data: events, error: eventsError } = await supabaseClient
-      .from('ag_events')
-      .select('id, couple_name, slug, created_at')
-      .order('created_at', { ascending: false });
-
-    if (eventsError){
-      statusText.className = 'status error';
-      statusText.textContent = eventsError.message;
-      return;
-    }
-
-    if (!events || events.length === 0){
-      summaryText.textContent = 'No clients yet.';
-      return;
-    }
-
-    summaryText.textContent = `${events.length} client${events.length === 1 ? '' : 's'}`;
-
-    const { data: allMessages, error: messagesError } = await supabaseClient
-      .from('ag_messages')
-      .select('event_id, guest_name, audio_path, created_at')
-      .order('created_at', { ascending: false });
-
-    if (messagesError){
-      statusText.className = 'status error';
-      statusText.textContent = messagesError.message;
-      return;
-    }
-
-    const messagesByEvent = {};
-    (allMessages || []).forEach(function(m){
-      if (!messagesByEvent[m.event_id]) messagesByEvent[m.event_id] = [];
-      messagesByEvent[m.event_id].push(m);
-    });
-
-    events.forEach(function(ev){
-      const group = document.createElement('div');
-      group.className = 'event-group';
-
-      const title = document.createElement('p');
-      title.className = 'event-group-title';
-      title.textContent = ev.couple_name;
-
-      const meta = document.createElement('p');
-      meta.className = 'event-group-meta';
-      const msgs = messagesByEvent[ev.id] || [];
-      meta.textContent = `/${ev.slug} · ${msgs.length} message${msgs.length === 1 ? '' : 's'} · created ${new Date(ev.created_at).toLocaleDateString()}`;
-
-      group.appendChild(title);
-      group.appendChild(meta);
-
-      if (msgs.length > 0){
-        const table = document.createElement('table');
-        table.className = 'data-table';
-        table.innerHTML = '<thead><tr><th>Guest</th><th>When</th><th>Message</th></tr></thead>';
-        const tbody = document.createElement('tbody');
-
-        msgs.forEach(function(m){
-          const tr = document.createElement('tr');
-
-          const nameTd = document.createElement('td');
-          nameTd.textContent = m.guest_name;
-
-          const timeTd = document.createElement('td');
-          timeTd.textContent = new Date(m.created_at).toLocaleString();
-
-          const audioTd = document.createElement('td');
-          const audioEl = document.createElement('audio');
-          audioEl.controls = true;
-          audioEl.src = STORAGE_BASE + m.audio_path;
-          audioTd.appendChild(audioEl);
-
-          tr.appendChild(nameTd);
-          tr.appendChild(timeTd);
-          tr.appendChild(audioTd);
-          tbody.appendChild(tr);
-        });
-
-        table.appendChild(tbody);
-        group.appendChild(table);
-      }
-
-      eventsContainer.appendChild(group);
-    });
-  }
-
-  init();
-})();
-</script>
+    <a href="signup.html" class="btn btn-primary">Create your guestbook</a>
+    <a href="login.html" class="btn btn-outline">Log in</a>
+  </main>
 
 </body>
 </html>
