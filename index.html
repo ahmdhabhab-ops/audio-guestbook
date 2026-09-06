@@ -7,13 +7,60 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,wght@0,400;0,600;1,500&family=Manrope:wght@500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="styles.css">
+<style>
+  :root{
+    --ivory: #FBF7F2; --card: #FFFFFF; --ink: #2C2430; --plum: #6B4E71; --plum-deep: #4C3549;
+    --mauve-soft: #EFE3EC; --gold: #B98B4E; --gold-soft: #E9D9BC; --line: #E7DEE2;
+  }
+  *{ box-sizing: border-box; }
+  html,body{ margin:0; padding:0; min-height:100%; }
+  body{
+    font-family:'Manrope', sans-serif; color: var(--ink);
+    background: radial-gradient(circle at 50% -10%, #FDFAF7 0%, var(--ivory) 45%, #F6EEF4 100%);
+    min-height:100vh; display:flex; align-items:center; justify-content:center; padding: 32px 16px;
+  }
+  .card{
+    width:100%; max-width:440px; background: var(--card); border: 1px solid var(--line);
+    border-radius: 28px; box-shadow: 0 24px 60px rgba(76, 53, 73, 0.10); padding: 48px 36px 40px; text-align:center;
+  }
+  .badge{
+    width: 84px; height: 84px; margin: 0 auto 28px; border-radius: 50%;
+    border: 1px solid var(--gold-soft); display:flex; align-items:center; justify-content:center; position:relative;
+  }
+  .badge::before{ content:""; position:absolute; inset: 6px; border-radius:50%; border: 1px solid var(--line); }
+  .badge svg{ width:28px; height:28px; position:relative; z-index:1; }
+  h1.heading{
+    font-family:'Fraunces', serif; font-weight:600; font-style:normal;
+    font-size: clamp(1.9rem, 5vw, 2.35rem); color: var(--plum-deep); margin: 0; line-height:1.15;
+  }
+  .tagline{
+    font-family:'Fraunces', serif; font-weight:400; font-style:italic;
+    font-size: clamp(1rem, 2.6vw, 1.15rem); color: var(--ink); margin: 6px 0 0; letter-spacing: 0.01em;
+  }
+  .ornament{ width: 64px; margin: 18px auto 20px; display:block; }
+  .ornament svg{ width:100%; height:auto; display:block; }
+  .subtext{
+    font-size: 0.95rem; line-height:1.55; color: var(--ink); opacity: 0.62; max-width: 32ch; margin: 0 auto 32px;
+  }
+  .btn{
+    font-family:'Manrope', sans-serif; font-weight:600; font-size: 0.95rem; border-radius: 999px; padding: 14px 24px;
+    display:flex; align-items:center; justify-content:center; gap: 9px; cursor:pointer; border: 1px solid transparent;
+    transition: transform .15s ease, background .2s ease, color .2s ease, border-color .2s ease;
+    text-decoration:none; width:100%;
+  }
+  .btn-primary{ background: var(--plum); color: #fff; margin-bottom:12px; }
+  .btn-primary:hover{ background: var(--plum-deep); transform: translateY(-1px); }
+  .btn-outline{ background: transparent; color: var(--plum-deep); border-color: var(--gold); }
+  .btn-outline:hover{ background: var(--gold-soft); }
+  *:focus-visible{ outline: 2px solid var(--plum); outline-offset: 3px; border-radius: 4px; }
+  @media (max-width: 420px){ .card{ padding: 40px 22px 32px; } }
+</style>
 </head>
 <body>
 
-  <div class="card">
-    <div class="badge" aria-hidden="true" style="width:84px;height:84px;margin:0 auto 20px;border-radius:50%;border:1.5px dashed var(--gold-soft);display:flex;align-items:center;justify-content:center;">
-      <svg viewBox="0 0 24 24" fill="none" stroke="#B98B4E" stroke-width="1.4" style="width:26px;height:26px;">
+  <main class="card">
+    <div class="badge" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#B98B4E" stroke-width="1.4">
         <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
         <path d="M6.5 11.5V12a5.5 5.5 0 0 0 11 0v-.5"/>
         <path d="M12 17.5V21"/>
@@ -21,11 +68,21 @@
     </div>
 
     <h1 class="heading">Audio Guestbook</h1>
-    <p class="subtext">Collect heartfelt voice messages from your guests — one link for every event.</p>
+    <p class="tagline">Voice messages, kept forever</p>
 
-    <a href="signup.html" class="btn btn-primary" style="text-decoration:none; margin-bottom:12px;">Create your guestbook</a>
-    <a href="login.html" class="btn btn-outline" style="text-decoration:none;">Log in</a>
-  </div>
+    <div class="ornament" aria-hidden="true">
+      <svg viewBox="0 0 64 8" xmlns="http://www.w3.org/2000/svg">
+        <line x1="0" y1="4" x2="26" y2="4" stroke="#B98B4E" stroke-width="1"/>
+        <circle cx="32" cy="4" r="2.5" fill="#B98B4E"/>
+        <line x1="38" y1="4" x2="64" y2="4" stroke="#B98B4E" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <p class="subtext">Collect heartfelt voice messages from your guests — one elegant link for every event.</p>
+
+    <a href="signup.html" class="btn btn-primary">Create your guestbook</a>
+    <a href="login.html" class="btn btn-outline">Log in</a>
+  </main>
 
 </body>
 </html>
