@@ -211,6 +211,21 @@
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
   }
 
+  function pickMimeType(){
+    if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
+    const candidates = [
+      'audio/webm;codecs=opus',
+      'audio/webm',
+      'audio/mp4',
+      'audio/ogg;codecs=opus',
+      'audio/ogg'
+    ];
+    for (var i = 0; i < candidates.length; i++){
+      if (MediaRecorder.isTypeSupported(candidates[i])) return candidates[i];
+    }
+    return '';
+  }
+
   function disableForm(message){
     startBtn.disabled = true;
     guestNameInput.disabled = true;
@@ -230,7 +245,7 @@
 
     const { data, error } = await supabaseClient
       .from('ag_events')
-      .select('id, couple_name, slug')
+      .select('id, couple_name, slug, status')
       .eq('slug', slug)
       .single();
 
@@ -242,6 +257,11 @@
 
     currentEvent = data;
     eventNameEl.textContent = data.couple_name;
+
+    if (data.status !== 'approved'){
+      disableForm("This guestbook isn't active yet. Please check back soon, or contact the couple.");
+      return;
+    }
 
     if (!supportsRecording()){
       disableForm("Audio recording isn't supported in this browser. Try a recent version of Chrome, Safari, or Firefox.");
@@ -271,14 +291,16 @@
       return;
     }
 
-    mediaRecorder = new MediaRecorder(activeStream);
+    const mimeType = pickMimeType();
+    mediaRecorder = mimeType ? new MediaRecorder(activeStream, { mimeType }) : new MediaRecorder(activeStream);
 
     mediaRecorder.addEventListener('dataavailable', function(e){
       if (e.data && e.data.size > 0) audioChunks.push(e.data);
     });
 
     mediaRecorder.addEventListener('stop', async function(){
-      const blob = new Blob(audioChunks, { type: 'audio/webm' });
+      const actualType = mediaRecorder.mimeType || 'audio/webm';
+      const blob = new Blob(audioChunks, { type: actualType });
       const localUrl = URL.createObjectURL(blob);
       audioPlayback.src = localUrl;
       playback.hidden = false;
@@ -288,12 +310,15 @@
       statusText.textContent = 'Uploading your message…';
 
       const guestName = guestNameInput.value.trim() || 'A guest';
-      const fileName = `${currentEvent.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.webm`;
+      const extension = actualType.indexOf('mp4') !== -1 ? 'm4a'
+        : actualType.indexOf('ogg') !== -1 ? 'ogg'
+        : 'webm';
+      const fileName = `${currentEvent.id}/${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${extension}`;
 
       const { error: uploadError } = await supabaseClient
         .storage
         .from('ag-recordings')
-        .upload(fileName, blob, { contentType: 'audio/webm' });
+        .upload(fileName, blob, { contentType: actualType });
 
       if (uploadError){
         statusText.className = 'status error';
