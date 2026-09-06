@@ -114,103 +114,88 @@
     });
 
     events.forEach(function(ev){
-      const group = document.createElement('div');
-      group.className = 'event-group';
+      const card = document.createElement('div');
+      card.className = 'client-card';
 
-      const titleRow = document.createElement('div');
-      titleRow.style.display = 'flex';
-      titleRow.style.alignItems = 'center';
-      titleRow.style.gap = '10px';
-      titleRow.style.flexWrap = 'wrap';
+      const header = document.createElement('div');
+      header.className = 'client-card-header';
 
       const title = document.createElement('p');
-      title.className = 'event-group-title';
-      title.style.margin = '0';
+      title.className = 'client-card-title';
       title.textContent = ev.couple_name;
 
       const badge = document.createElement('span');
+      badge.className = 'status-pill ' + ev.status;
       badge.textContent = ev.status;
-      badge.style.fontSize = '0.72rem';
-      badge.style.fontWeight = '600';
-      badge.style.padding = '3px 10px';
-      badge.style.borderRadius = '999px';
-      badge.style.textTransform = 'capitalize';
-      if (ev.status === 'approved'){
-        badge.style.background = '#E9F3EA';
-        badge.style.color = '#3C7A45';
-      } else if (ev.status === 'rejected'){
-        badge.style.background = '#F7E7E5';
-        badge.style.color = '#B4534B';
-      } else {
-        badge.style.background = 'var(--gold-soft)';
-        badge.style.color = 'var(--plum-deep)';
-      }
 
-      titleRow.appendChild(title);
-      titleRow.appendChild(badge);
+      header.appendChild(title);
+      header.appendChild(badge);
+
+      const meta = document.createElement('p');
+      meta.className = 'client-card-meta';
+      const msgs = messagesByEvent[ev.id] || [];
+      meta.textContent = `/${ev.slug} · ${msgs.length} message${msgs.length === 1 ? '' : 's'} · created ${new Date(ev.created_at).toLocaleDateString()}`;
+
+      const actions = document.createElement('div');
+      actions.className = 'client-actions';
 
       if (ev.status !== 'approved'){
         const approveBtn = document.createElement('button');
         approveBtn.type = 'button';
-        approveBtn.className = 'btn-text';
-        approveBtn.style.width = 'auto';
-        approveBtn.style.padding = '2px 4px';
+        approveBtn.className = 'action-btn approve';
         approveBtn.textContent = 'Approve';
         approveBtn.addEventListener('click', function(){ setStatus(ev.id, 'approved'); });
-        titleRow.appendChild(approveBtn);
+        actions.appendChild(approveBtn);
       }
 
       if (ev.status !== 'rejected'){
         const rejectBtn = document.createElement('button');
         rejectBtn.type = 'button';
-        rejectBtn.className = 'btn-text';
-        rejectBtn.style.width = 'auto';
-        rejectBtn.style.padding = '2px 4px';
+        rejectBtn.className = 'action-btn reject';
         rejectBtn.textContent = 'Reject';
         rejectBtn.addEventListener('click', function(){ setStatus(ev.id, 'rejected'); });
-        titleRow.appendChild(rejectBtn);
+        actions.appendChild(rejectBtn);
       }
 
-      const meta = document.createElement('p');
-      meta.className = 'event-group-meta';
-      const msgs = messagesByEvent[ev.id] || [];
-      meta.textContent = `/${ev.slug} · ${msgs.length} message${msgs.length === 1 ? '' : 's'} · created ${new Date(ev.created_at).toLocaleDateString()}`;
-
-      group.appendChild(titleRow);
-      group.appendChild(meta);
+      card.appendChild(header);
+      card.appendChild(meta);
+      card.appendChild(actions);
 
       if (msgs.length > 0){
-        const table = document.createElement('table');
-        table.className = 'data-table';
-        table.innerHTML = '<thead><tr><th>Guest</th><th>When</th><th>Message</th></tr></thead>';
-        const tbody = document.createElement('tbody');
+        const list = document.createElement('div');
+        list.className = 'message-list';
 
         msgs.forEach(function(m){
-          const tr = document.createElement('tr');
+          const row = document.createElement('div');
+          row.className = 'message-row';
 
-          const nameTd = document.createElement('td');
-          nameTd.textContent = m.guest_name;
+          const who = document.createElement('div');
+          who.className = 'message-who';
 
-          const timeTd = document.createElement('td');
-          timeTd.textContent = new Date(m.created_at).toLocaleString();
+          const nameEl = document.createElement('span');
+          nameEl.className = 'message-guest';
+          nameEl.textContent = m.guest_name;
 
-          const audioTd = document.createElement('td');
+          const timeEl = document.createElement('span');
+          timeEl.className = 'message-time';
+          timeEl.textContent = new Date(m.created_at).toLocaleString();
+
+          who.appendChild(nameEl);
+          who.appendChild(timeEl);
+
           const audioEl = document.createElement('audio');
           audioEl.controls = true;
           audioEl.src = STORAGE_BASE + m.audio_path;
-          audioTd.appendChild(audioEl);
 
-          tr.appendChild(nameTd);
-          tr.appendChild(timeTd);
-          tr.appendChild(audioTd);
-          tbody.appendChild(tr);
+          row.appendChild(who);
+          row.appendChild(audioEl);
+          list.appendChild(row);
         });
 
-        table.appendChild(tbody);
-        group.appendChild(table);
+        card.appendChild(list);
       }
 
-      eventsContainer.appendChild(group);
+      eventsContainer.appendChild(card);
     });
   }
 
