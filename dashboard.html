@@ -28,12 +28,7 @@
     <p class="status" id="pendingBanner" hidden>Your guestbook is pending admin approval. Guests can't record messages yet — you'll be notified once it's approved.</p>
     <p class="status" id="statusText"></p>
 
-    <table class="data-table" id="messagesTable" hidden>
-      <thead>
-        <tr><th>Guest</th><th>When</th><th>Message</th></tr>
-      </thead>
-      <tbody id="messagesBody"></tbody>
-    </table>
+    <div class="message-list" id="messagesList" hidden></div>
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -47,8 +42,7 @@
   const copyBtn = document.getElementById('copyBtn');
   const statusText = document.getElementById('statusText');
   const pendingBanner = document.getElementById('pendingBanner');
-  const messagesTable = document.getElementById('messagesTable');
-  const messagesBody = document.getElementById('messagesBody');
+  const messagesList = document.getElementById('messagesList');
   const logoutBtn = document.getElementById('logoutBtn');
 
   const STORAGE_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
@@ -114,27 +108,33 @@
     }
 
     messages.forEach(function(m){
-      const tr = document.createElement('tr');
+      const row = document.createElement('div');
+      row.className = 'message-row';
 
-      const nameTd = document.createElement('td');
-      nameTd.textContent = m.guest_name;
+      const who = document.createElement('div');
+      who.className = 'message-who';
 
-      const timeTd = document.createElement('td');
-      timeTd.textContent = new Date(m.created_at).toLocaleString();
+      const nameEl = document.createElement('span');
+      nameEl.className = 'message-guest';
+      nameEl.textContent = m.guest_name;
 
-      const audioTd = document.createElement('td');
+      const timeEl = document.createElement('span');
+      timeEl.className = 'message-time';
+      timeEl.textContent = new Date(m.created_at).toLocaleString();
+
+      who.appendChild(nameEl);
+      who.appendChild(timeEl);
+
       const audioEl = document.createElement('audio');
       audioEl.controls = true;
       audioEl.src = STORAGE_BASE + m.audio_path;
-      audioTd.appendChild(audioEl);
 
-      tr.appendChild(nameTd);
-      tr.appendChild(timeTd);
-      tr.appendChild(audioTd);
-      messagesBody.appendChild(tr);
+      row.appendChild(who);
+      row.appendChild(audioEl);
+      messagesList.appendChild(row);
     });
 
-    messagesTable.hidden = false;
+    messagesList.hidden = false;
   }
 
   init();
