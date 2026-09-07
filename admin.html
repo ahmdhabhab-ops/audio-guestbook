@@ -33,6 +33,7 @@
   const logoutBtn = document.getElementById('logoutBtn');
 
   const STORAGE_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
+  const COVER_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-covers/';
 
   logoutBtn.addEventListener('click', async function(){
     await supabaseClient.auth.signOut();
@@ -51,6 +52,209 @@
     }
 
     init();
+  }
+
+  function renderCoverLayer(container, ev){
+    container.innerHTML = '';
+    const cover = document.createElement('div');
+    cover.className = 'book-cover-page';
+    const inner = document.createElement('div');
+    inner.className = 'book-cover-page-inner';
+
+    if (ev.cover_photo_path){
+      const img = document.createElement('img');
+      img.className = 'book-cover-page-photo';
+      img.src = COVER_BASE + ev.cover_photo_path;
+      img.alt = 'Cover photo';
+      inner.appendChild(img);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'book-cover-page-photo-placeholder';
+      placeholder.textContent = '📷';
+      inner.appendChild(placeholder);
+    }
+
+    const title = document.createElement('p');
+    title.className = 'book-cover-page-title';
+    title.textContent = 'Guest Book';
+
+    const divider = document.createElement('div');
+    divider.className = 'book-cover-page-divider';
+
+    const names = document.createElement('p');
+    names.className = 'book-cover-page-names';
+    names.textContent = ev.couple_name;
+
+    const date = document.createElement('p');
+    date.className = 'book-cover-page-date';
+    date.textContent = new Date(ev.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
+
+    inner.appendChild(title);
+    inner.appendChild(divider);
+    inner.appendChild(names);
+    inner.appendChild(date);
+    cover.appendChild(inner);
+    container.appendChild(cover);
+  }
+
+  function renderMessageLayer(container, m){
+    container.innerHTML = '';
+    const spread = document.createElement('div');
+    spread.className = 'book-spread';
+
+    const left = document.createElement('div');
+    left.className = 'book-spread-left';
+    const mark = document.createElement('span');
+    mark.className = 'book-spread-left-mark';
+    mark.textContent = '“ ”';
+    left.appendChild(mark);
+
+    const right = document.createElement('div');
+    right.className = 'book-spread-right';
+
+    const quote = document.createElement('p');
+    quote.className = 'book-page-quote';
+    quote.textContent = m.message_text;
+
+    const sig = document.createElement('p');
+    sig.className = 'book-page-sig';
+    sig.textContent = m.guest_name;
+
+    const time = document.createElement('span');
+    time.className = 'book-page-time';
+    time.textContent = new Date(m.created_at).toLocaleString();
+
+    right.appendChild(quote);
+    right.appendChild(sig);
+    right.appendChild(time);
+    spread.appendChild(left);
+    spread.appendChild(right);
+    container.appendChild(spread);
+  }
+
+  function renderEmptyLayer(container, text){
+    container.innerHTML = '';
+    const spread = document.createElement('div');
+    spread.className = 'book-spread';
+
+    const left = document.createElement('div');
+    left.className = 'book-spread-left';
+    const mark = document.createElement('span');
+    mark.className = 'book-spread-left-mark';
+    mark.textContent = '“ ”';
+    left.appendChild(mark);
+
+    const right = document.createElement('div');
+    right.className = 'book-spread-right';
+    const p = document.createElement('p');
+    p.className = 'subtext';
+    p.style.margin = '0';
+    p.textContent = text;
+    right.appendChild(p);
+
+    spread.appendChild(left);
+    spread.appendChild(right);
+    container.appendChild(spread);
+  }
+
+  function buildBookWidget(ev, textMessages){
+    const pages = [{ type: 'cover' }];
+    if (textMessages.length > 0){
+      textMessages.forEach(function(m){ pages.push({ type: 'message', data: m }); });
+    } else {
+      pages.push({ type: 'empty' });
+    }
+
+    const wrap = document.createElement('div');
+
+    const viewer = document.createElement('div');
+    viewer.className = 'book-viewer';
+
+    const prevBtn = document.createElement('button');
+    prevBtn.type = 'button';
+    prevBtn.className = 'book-nav';
+    prevBtn.setAttribute('aria-label', 'Previous page');
+    prevBtn.textContent = '‹';
+
+    const frame = document.createElement('div');
+    frame.className = 'book-page-frame';
+    const back = document.createElement('div');
+    back.className = 'book-page-layer book-page-back';
+    const front = document.createElement('div');
+    front.className = 'book-page-layer book-page-front';
+    frame.appendChild(back);
+    frame.appendChild(front);
+
+    const nextBtn = document.createElement('button');
+    nextBtn.type = 'button';
+    nextBtn.className = 'book-nav';
+    nextBtn.setAttribute('aria-label', 'Next page');
+    nextBtn.textContent = '›';
+
+    viewer.appendChild(prevBtn);
+    viewer.appendChild(frame);
+    viewer.appendChild(nextBtn);
+
+    const counter = document.createElement('p');
+    counter.className = 'book-page-counter';
+
+    wrap.appendChild(viewer);
+    wrap.appendChild(counter);
+
+    let pageIndex = 0;
+    let flipping = false;
+
+    function fillLayer(container, page){
+      if (page.type === 'cover') renderCoverLayer(container, ev);
+      else if (page.type === 'empty') renderEmptyLayer(container, 'No written wishes yet.');
+      else renderMessageLayer(container, page.data);
+    }
+
+    function updateChrome(){
+      prevBtn.disabled = pageIndex === 0;
+      nextBtn.disabled = pageIndex === pages.length - 1;
+      counter.textContent = `~ ${pageIndex + 1} of ${pages.length} ~`;
+    }
+
+    function goToPage(newIndex, direction){
+      if (flipping || newIndex < 0 || newIndex >= pages.length) return;
+      flipping = true;
+
+      fillLayer(back, pages[newIndex]);
+
+      front.style.transition = 'none';
+      front.classList.remove('flipping-next', 'flipping-prev');
+      void front.offsetWidth;
+      front.style.transition = '';
+
+      requestAnimationFrame(function(){
+        front.classList.add(direction === 'prev' ? 'flipping-prev' : 'flipping-next');
+      });
+
+      front.addEventListener('transitionend', function handler(e){
+        if (e.propertyName !== 'transform') return;
+        front.removeEventListener('transitionend', handler);
+
+        front.style.transition = 'none';
+        front.classList.remove('flipping-next', 'flipping-prev');
+        fillLayer(front, pages[newIndex]);
+        void front.offsetWidth;
+        front.style.transition = '';
+
+        pageIndex = newIndex;
+        updateChrome();
+        flipping = false;
+      }, { once: true });
+    }
+
+    prevBtn.addEventListener('click', function(){ goToPage(pageIndex - 1, 'prev'); });
+    nextBtn.addEventListener('click', function(){ goToPage(pageIndex + 1, 'next'); });
+
+    fillLayer(back, pages[0]);
+    fillLayer(front, pages[0]);
+    updateChrome();
+
+    return wrap;
   }
 
   async function init(){
@@ -78,7 +282,7 @@
 
     const { data: events, error: eventsError } = await supabaseClient
       .from('ag_events')
-      .select('id, couple_name, slug, created_at, status')
+      .select('id, couple_name, slug, created_at, status, cover_photo_path')
       .order('created_at', { ascending: false });
 
     if (eventsError){
@@ -131,9 +335,12 @@
       header.appendChild(title);
       header.appendChild(badge);
 
+      const msgs = messagesByEvent[ev.id] || [];
+      const voiceMessages = msgs.filter(function(m){ return m.audio_path; });
+      const textMessages = msgs.filter(function(m){ return m.message_text; });
+
       const meta = document.createElement('p');
       meta.className = 'client-card-meta';
-      const msgs = messagesByEvent[ev.id] || [];
       meta.textContent = `/${ev.slug} · ${msgs.length} message${msgs.length === 1 ? '' : 's'} · created ${new Date(ev.created_at).toLocaleDateString()}`;
 
       const actions = document.createElement('div');
@@ -161,45 +368,76 @@
       card.appendChild(meta);
       card.appendChild(actions);
 
-      const msgs2 = messagesByEvent[ev.id] || [];
-      if (msgs2.length > 0){
-        const grid = document.createElement('div');
-        grid.className = 'notes-grid';
+      // Tabs: Voice Messages / Guestbook
+      const tabs = document.createElement('div');
+      tabs.className = 'mode-tabs';
+      const voiceTab = document.createElement('button');
+      voiceTab.type = 'button';
+      voiceTab.className = 'mode-tab active';
+      voiceTab.textContent = '🎙 Voice Messages';
+      const bookTab = document.createElement('button');
+      bookTab.type = 'button';
+      bookTab.className = 'mode-tab';
+      bookTab.textContent = '📖 Guestbook';
+      tabs.appendChild(voiceTab);
+      tabs.appendChild(bookTab);
 
-        msgs2.forEach(function(m){
-          const page = document.createElement('div');
-          page.className = 'note-page';
+      const voicePane = document.createElement('div');
+      const voiceList = document.createElement('div');
+      voiceList.className = 'message-list';
 
-          if (m.message_text){
-            const quote = document.createElement('p');
-            quote.className = 'note-page-quote';
-            quote.textContent = m.message_text;
-            page.appendChild(quote);
-          } else if (m.audio_path){
-            const audioWrap = document.createElement('div');
-            audioWrap.className = 'note-page-audio';
-            const audioEl = document.createElement('audio');
-            audioEl.controls = true;
-            audioEl.src = STORAGE_BASE + m.audio_path;
-            audioWrap.appendChild(audioEl);
-            page.appendChild(audioWrap);
-          }
+      if (voiceMessages.length > 0){
+        voiceMessages.forEach(function(m){
+          const row = document.createElement('div');
+          row.className = 'message-row';
 
-          const time = document.createElement('span');
-          time.className = 'note-page-time';
-          time.textContent = new Date(m.created_at).toLocaleString();
+          const who = document.createElement('div');
+          who.className = 'message-who';
+          const nameEl = document.createElement('span');
+          nameEl.className = 'message-guest';
+          nameEl.textContent = m.guest_name;
+          const timeEl = document.createElement('span');
+          timeEl.className = 'message-time';
+          timeEl.textContent = new Date(m.created_at).toLocaleString();
+          who.appendChild(nameEl);
+          who.appendChild(timeEl);
 
-          const sig = document.createElement('span');
-          sig.className = 'note-page-sig';
-          sig.textContent = m.guest_name;
+          const audioEl = document.createElement('audio');
+          audioEl.controls = true;
+          audioEl.src = STORAGE_BASE + m.audio_path;
 
-          page.appendChild(time);
-          page.appendChild(sig);
-          grid.appendChild(page);
+          row.appendChild(who);
+          row.appendChild(audioEl);
+          voiceList.appendChild(row);
         });
-
-        card.appendChild(grid);
+      } else {
+        const emptyText = document.createElement('p');
+        emptyText.className = 'status';
+        emptyText.textContent = 'No voice messages yet.';
+        voiceList.appendChild(emptyText);
       }
+      voicePane.appendChild(voiceList);
+
+      const bookPane = document.createElement('div');
+      bookPane.hidden = true;
+      bookPane.appendChild(buildBookWidget(ev, textMessages));
+
+      voiceTab.addEventListener('click', function(){
+        voiceTab.classList.add('active');
+        bookTab.classList.remove('active');
+        voicePane.hidden = false;
+        bookPane.hidden = true;
+      });
+      bookTab.addEventListener('click', function(){
+        bookTab.classList.add('active');
+        voiceTab.classList.remove('active');
+        bookPane.hidden = false;
+        voicePane.hidden = true;
+      });
+
+      card.appendChild(tabs);
+      card.appendChild(voicePane);
+      card.appendChild(bookPane);
 
       eventsContainer.appendChild(card);
     });
