@@ -143,6 +143,17 @@ table.data-table audio{ height:32px; max-width:220px; }
 }
 .event-group-meta{ font-size:0.78rem; color:var(--ink); opacity:0.5; margin: 0 0 12px; }
 
+.mode-tabs{
+  display:flex; gap:6px; background: var(--ivory); border: 1px solid var(--line);
+  border-radius: 999px; padding: 4px; margin: 8px auto 24px; max-width: 320px;
+}
+.mode-tab{
+  flex:1; font-family:'Manrope', sans-serif; font-weight:600; font-size:0.85rem;
+  padding: 9px 10px; border-radius: 999px; border:none; background:none; color: var(--ink);
+  opacity:0.55; cursor:pointer; transition: background .2s ease, opacity .2s ease, color .2s ease;
+}
+.mode-tab.active{ background: var(--card); opacity:1; color: var(--plum-deep); box-shadow: 0 2px 6px rgba(76,53,73,0.08); }
+
 /* --- Admin: client cards (replaces raw tables, mobile-friendly) --- */
 .client-card{
   background: var(--ivory);
