@@ -161,54 +161,29 @@
       card.appendChild(meta);
       card.appendChild(actions);
 
-      const voiceMessages = msgs.filter(function(m){ return m.audio_path; });
-      const textMessages = msgs.filter(function(m){ return m.message_text; });
-
-      if (voiceMessages.length > 0){
-        const list = document.createElement('div');
-        list.className = 'message-list';
-
-        voiceMessages.forEach(function(m){
-          const row = document.createElement('div');
-          row.className = 'message-row';
-
-          const who = document.createElement('div');
-          who.className = 'message-who';
-
-          const nameEl = document.createElement('span');
-          nameEl.className = 'message-guest';
-          nameEl.textContent = m.guest_name;
-
-          const timeEl = document.createElement('span');
-          timeEl.className = 'message-time';
-          timeEl.textContent = new Date(m.created_at).toLocaleString();
-
-          who.appendChild(nameEl);
-          who.appendChild(timeEl);
-
-          const audioEl = document.createElement('audio');
-          audioEl.controls = true;
-          audioEl.src = STORAGE_BASE + m.audio_path;
-
-          row.appendChild(who);
-          row.appendChild(audioEl);
-          list.appendChild(row);
-        });
-
-        card.appendChild(list);
-      }
-
-      if (textMessages.length > 0){
+      const msgs2 = messagesByEvent[ev.id] || [];
+      if (msgs2.length > 0){
         const grid = document.createElement('div');
         grid.className = 'notes-grid';
 
-        textMessages.forEach(function(m){
+        msgs2.forEach(function(m){
           const page = document.createElement('div');
           page.className = 'note-page';
 
-          const quote = document.createElement('p');
-          quote.className = 'note-page-quote';
-          quote.textContent = m.message_text;
+          if (m.message_text){
+            const quote = document.createElement('p');
+            quote.className = 'note-page-quote';
+            quote.textContent = m.message_text;
+            page.appendChild(quote);
+          } else if (m.audio_path){
+            const audioWrap = document.createElement('div');
+            audioWrap.className = 'note-page-audio';
+            const audioEl = document.createElement('audio');
+            audioEl.controls = true;
+            audioEl.src = STORAGE_BASE + m.audio_path;
+            audioWrap.appendChild(audioEl);
+            page.appendChild(audioWrap);
+          }
 
           const time = document.createElement('span');
           time.className = 'note-page-time';
@@ -218,7 +193,6 @@
           sig.className = 'note-page-sig';
           sig.textContent = m.guest_name;
 
-          page.appendChild(quote);
           page.appendChild(time);
           page.appendChild(sig);
           grid.appendChild(page);
