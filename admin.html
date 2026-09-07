@@ -53,7 +53,7 @@
   const addAdminStatus = document.getElementById('addAdminStatus');
 
   const STORAGE_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
-  const COVER_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-covers/';
+  const COVER_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
 
   logoutBtn.addEventListener('click', async function(){
     await supabaseClient.auth.signOut();
