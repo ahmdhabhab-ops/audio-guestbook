@@ -252,6 +252,8 @@ table.data-table audio{ height:32px; max-width:220px; }
 }
 .note-page-quote::before{ content: "“"; }
 .note-page-quote::after{ content: "”"; }
+.note-page-audio{ flex:1; display:flex; align-items:center; }
+.note-page-audio audio{ width:100%; height:34px; }
 .note-page-sig{
   align-self: flex-end;
   font-family:'Fraunces', serif;
