@@ -220,6 +220,58 @@ table.data-table audio{ height:32px; max-width:220px; }
   .message-row audio{ width:100%; max-width:none; }
 }
 
+/* --- Written notes: shown like guestbook pages --- */
+.notes-grid{
+  display:grid;
+  grid-template-columns: repeat(auto-fill, minmax(210px, 1fr));
+  gap: 14px;
+  margin-top: 14px;
+}
+.note-page{
+  background: var(--card);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--gold);
+  border-radius: 4px 14px 14px 4px;
+  padding: 18px 20px;
+  box-shadow: 0 6px 16px rgba(76, 53, 73, 0.06);
+  display:flex;
+  flex-direction:column;
+  gap: 12px;
+  min-height: 120px;
+}
+.note-page-quote{
+  font-family:'Fraunces', serif;
+  font-style: italic;
+  font-size: 0.95rem;
+  line-height: 1.55;
+  color: var(--ink);
+  margin: 0;
+  flex: 1;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.note-page-quote::before{ content: "“"; }
+.note-page-quote::after{ content: "”"; }
+.note-page-sig{
+  align-self: flex-end;
+  font-family:'Fraunces', serif;
+  font-weight:600;
+  font-size: 0.85rem;
+  color: var(--plum-deep);
+}
+.note-page-sig::before{ content: "— "; opacity:0.5; }
+.note-page-time{
+  font-size: 0.68rem;
+  color: var(--ink);
+  opacity: 0.4;
+  align-self: flex-end;
+  margin-top: -8px;
+}
+
+@media (max-width: 480px){
+  .notes-grid{ grid-template-columns: 1fr; }
+}
+
 .topbar{
   width:100%; max-width:720px; display:flex; justify-content:space-between; align-items:center; margin-bottom: 18px;
 }
