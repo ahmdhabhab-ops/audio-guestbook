@@ -100,33 +100,44 @@
   function renderCoverPage(){
     pageFrame.innerHTML = '';
 
+    const cover = document.createElement('div');
+    cover.className = 'book-cover-page';
+
+    const inner = document.createElement('div');
+    inner.className = 'book-cover-page-inner';
+
     if (currentEvent.cover_photo_path){
       const img = document.createElement('img');
-      img.className = 'book-cover-photo';
+      img.className = 'book-cover-page-photo';
       img.src = COVER_BASE + currentEvent.cover_photo_path + '?t=' + Date.now();
       img.alt = 'Cover photo';
-      pageFrame.appendChild(img);
+      inner.appendChild(img);
     } else {
       const placeholder = document.createElement('div');
-      placeholder.className = 'book-cover-photo-placeholder';
+      placeholder.className = 'book-cover-page-photo-placeholder';
       placeholder.textContent = '📷';
-      pageFrame.appendChild(placeholder);
+      inner.appendChild(placeholder);
     }
 
     const title = document.createElement('p');
-    title.className = 'book-cover-title';
-    title.textContent = currentEvent.couple_name;
+    title.className = 'book-cover-page-title';
+    title.textContent = 'Guest Book';
 
-    const tagline = document.createElement('p');
-    tagline.className = 'book-cover-tagline';
-    tagline.textContent = 'Every voice, every wish — kept here';
+    const divider = document.createElement('div');
+    divider.className = 'book-cover-page-divider';
+
+    const names = document.createElement('p');
+    names.className = 'book-cover-page-names';
+    names.textContent = currentEvent.couple_name;
+
+    const date = document.createElement('p');
+    date.className = 'book-cover-page-date';
+    date.textContent = new Date(currentEvent.created_at).toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' });
 
     const uploadWrap = document.createElement('div');
-    uploadWrap.className = 'book-cover-upload';
+    uploadWrap.className = 'book-cover-page-upload';
     const uploadBtn = document.createElement('button');
     uploadBtn.type = 'button';
-    uploadBtn.className = 'btn-text';
-    uploadBtn.style.width = 'auto';
     uploadBtn.textContent = currentEvent.cover_photo_path ? 'Change cover photo' : 'Add a cover photo';
 
     const fileInput = document.createElement('input');
@@ -167,18 +178,34 @@
     uploadWrap.appendChild(uploadBtn);
     uploadWrap.appendChild(fileInput);
 
-    pageFrame.appendChild(title);
-    pageFrame.appendChild(tagline);
-    pageFrame.appendChild(uploadWrap);
+    inner.appendChild(title);
+    inner.appendChild(divider);
+    inner.appendChild(names);
+    inner.appendChild(date);
+    inner.appendChild(uploadWrap);
+    cover.appendChild(inner);
+    pageFrame.appendChild(cover);
   }
 
   function renderMessagePage(m){
     pageFrame.innerHTML = '';
 
+    const spread = document.createElement('div');
+    spread.className = 'book-spread';
+
+    const left = document.createElement('div');
+    left.className = 'book-spread-left';
+    const mark = document.createElement('span');
+    mark.className = 'book-spread-left-mark';
+    mark.textContent = '“ ”';
+    left.appendChild(mark);
+
+    const right = document.createElement('div');
+    right.className = 'book-spread-right';
+
     const quote = document.createElement('p');
     quote.className = 'book-page-quote';
     quote.textContent = m.message_text;
-    pageFrame.appendChild(quote);
 
     const sig = document.createElement('p');
     sig.className = 'book-page-sig';
@@ -188,17 +215,39 @@
     time.className = 'book-page-time';
     time.textContent = new Date(m.created_at).toLocaleString();
 
-    pageFrame.appendChild(sig);
-    pageFrame.appendChild(time);
+    right.appendChild(quote);
+    right.appendChild(sig);
+    right.appendChild(time);
+
+    spread.appendChild(left);
+    spread.appendChild(right);
+    pageFrame.appendChild(spread);
   }
 
   function renderEmptyMessagesPage(){
     pageFrame.innerHTML = '';
+
+    const spread = document.createElement('div');
+    spread.className = 'book-spread';
+
+    const left = document.createElement('div');
+    left.className = 'book-spread-left';
+    const mark = document.createElement('span');
+    mark.className = 'book-spread-left-mark';
+    mark.textContent = '“ ”';
+    left.appendChild(mark);
+
+    const right = document.createElement('div');
+    right.className = 'book-spread-right';
     const p = document.createElement('p');
     p.className = 'subtext';
     p.style.margin = '0';
     p.textContent = 'No written wishes yet — share your guest link to start collecting them.';
-    pageFrame.appendChild(p);
+    right.appendChild(p);
+
+    spread.appendChild(left);
+    spread.appendChild(right);
+    pageFrame.appendChild(spread);
   }
 
   function renderPage(direction){
