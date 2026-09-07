@@ -79,7 +79,7 @@
   const logoutBtn = document.getElementById('logoutBtn');
 
   const STORAGE_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
-  const COVER_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-covers/';
+  const COVER_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
 
   let currentEvent = null;
   let pages = []; // [{ type:'cover' }, { type:'message', data: m }, ...] — written wishes only
@@ -169,11 +169,11 @@
 
       uploadBtn.textContent = 'Uploading…';
       const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
-      const path = `${currentEvent.id}/cover.${ext}`;
+      const path = `covers/${currentEvent.id}/cover.${ext}`;
 
       const { error: uploadError } = await supabaseClient
         .storage
-        .from('ag-covers')
+        .from('ag-recordings')
         .upload(path, file, { upsert: true, contentType: file.type });
 
       if (uploadError){
