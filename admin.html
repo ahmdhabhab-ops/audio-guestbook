@@ -16,6 +16,20 @@
     <button type="button" class="btn-text" id="logoutBtn" style="width:auto;">Log out</button>
   </div>
 
+  <div class="card wide" id="adminsCard" hidden>
+    <h1 class="heading" style="font-size:1.3rem;">Admins</h1>
+    <p class="subtext" id="adminsList" style="margin-bottom:16px;">Loading…</p>
+
+    <form id="addAdminForm" style="display:flex; gap:10px; flex-wrap:wrap; align-items:flex-end;">
+      <div class="field" style="flex:1; min-width:220px; margin-bottom:0;">
+        <label class="field-label" for="newAdminEmail">Add admin by email</label>
+        <input type="email" id="newAdminEmail" class="field-input" placeholder="colleague@email.com" required>
+      </div>
+      <button type="submit" class="btn btn-primary" style="width:auto; padding:11px 20px;">Add</button>
+    </form>
+    <p class="status" id="addAdminStatus"></p>
+  </div>
+
   <div class="card wide">
     <h1 class="heading">All clients</h1>
     <p class="subtext" id="summaryText"></p>
@@ -32,12 +46,81 @@
   const eventsContainer = document.getElementById('eventsContainer');
   const logoutBtn = document.getElementById('logoutBtn');
 
+  const adminsCard = document.getElementById('adminsCard');
+  const adminsList = document.getElementById('adminsList');
+  const addAdminForm = document.getElementById('addAdminForm');
+  const newAdminEmail = document.getElementById('newAdminEmail');
+  const addAdminStatus = document.getElementById('addAdminStatus');
+
   const STORAGE_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
   const COVER_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-covers/';
 
   logoutBtn.addEventListener('click', async function(){
     await supabaseClient.auth.signOut();
     location.href = 'login.html';
+  });
+
+  async function loadAdmins(currentUserId){
+    const { data, error } = await supabaseClient.rpc('list_admins');
+
+    if (error){
+      adminsList.textContent = error.message;
+      return;
+    }
+
+    adminsList.innerHTML = '';
+    (data || []).forEach(function(a, i){
+      if (i > 0) adminsList.appendChild(document.createTextNode(' · '));
+      const span = document.createElement('span');
+      span.textContent = a.email + (a.user_id === currentUserId ? ' (you)' : '');
+      adminsList.appendChild(span);
+
+      if (a.user_id !== currentUserId){
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'btn-text';
+        removeBtn.style.width = 'auto';
+        removeBtn.style.padding = '0 0 0 4px';
+        removeBtn.style.fontSize = '0.8rem';
+        removeBtn.textContent = 'remove';
+        removeBtn.addEventListener('click', async function(){
+          const { error: removeError } = await supabaseClient.rpc('remove_admin', { target_user_id: a.user_id });
+          if (removeError){
+            window.alert('Could not remove admin: ' + removeError.message);
+            return;
+          }
+          loadAdmins(currentUserId);
+        });
+        adminsList.appendChild(removeBtn);
+      }
+    });
+
+    if (!data || data.length === 0){
+      adminsList.textContent = 'No admins found.';
+    }
+  }
+
+  addAdminForm.addEventListener('submit', async function(e){
+    e.preventDefault();
+    const email = newAdminEmail.value.trim();
+    if (!email) return;
+
+    addAdminStatus.className = 'status';
+    addAdminStatus.textContent = 'Adding…';
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    const { error } = await supabaseClient.rpc('add_admin_by_email', { target_email: email });
+
+    if (error){
+      addAdminStatus.className = 'status error';
+      addAdminStatus.textContent = error.message;
+      return;
+    }
+
+    addAdminStatus.className = 'status success';
+    addAdminStatus.textContent = `${email} is now an admin.`;
+    newAdminEmail.value = '';
+    if (session) loadAdmins(session.user.id);
   });
 
   async function setStatus(eventId, newStatus){
@@ -279,6 +362,9 @@
       statusText.textContent = "This account doesn't have admin access.";
       return;
     }
+
+    adminsCard.hidden = false;
+    loadAdmins(session.user.id);
 
     const { data: events, error: eventsError } = await supabaseClient
       .from('ag_events')
