@@ -28,7 +28,12 @@
     <p class="status" id="pendingBanner" hidden>Your guestbook is pending admin approval. Guests can't record messages yet — you'll be notified once it's approved.</p>
     <p class="status" id="statusText"></p>
 
-    <div class="notes-grid" id="bookGrid" hidden></div>
+    <div class="book-viewer" id="bookViewer" hidden>
+      <button type="button" class="book-nav" id="prevPageBtn" aria-label="Previous page">‹</button>
+      <div class="book-page-frame" id="pageFrame"></div>
+      <button type="button" class="book-nav" id="nextPageBtn" aria-label="Next page">›</button>
+    </div>
+    <p class="book-page-counter" id="pageCounter"></p>
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -42,14 +47,158 @@
   const copyBtn = document.getElementById('copyBtn');
   const statusText = document.getElementById('statusText');
   const pendingBanner = document.getElementById('pendingBanner');
-  const bookGrid = document.getElementById('bookGrid');
+  const bookViewer = document.getElementById('bookViewer');
+  const pageFrame = document.getElementById('pageFrame');
+  const prevPageBtn = document.getElementById('prevPageBtn');
+  const nextPageBtn = document.getElementById('nextPageBtn');
+  const pageCounter = document.getElementById('pageCounter');
   const logoutBtn = document.getElementById('logoutBtn');
 
   const STORAGE_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-recordings/';
+  const COVER_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-covers/';
+
+  let currentEvent = null;
+  let pages = []; // [{ type:'cover' }, { type:'message', data: m }, ...]
+  let pageIndex = 0;
 
   logoutBtn.addEventListener('click', async function(){
     await supabaseClient.auth.signOut();
     location.href = 'login.html';
+  });
+
+  function renderCoverPage(){
+    pageFrame.innerHTML = '';
+
+    if (currentEvent.cover_photo_path){
+      const img = document.createElement('img');
+      img.className = 'book-cover-photo';
+      img.src = COVER_BASE + currentEvent.cover_photo_path + '?t=' + Date.now();
+      img.alt = 'Cover photo';
+      pageFrame.appendChild(img);
+    } else {
+      const placeholder = document.createElement('div');
+      placeholder.className = 'book-cover-photo-placeholder';
+      placeholder.textContent = '📷';
+      pageFrame.appendChild(placeholder);
+    }
+
+    const title = document.createElement('p');
+    title.className = 'book-cover-title';
+    title.textContent = currentEvent.couple_name;
+
+    const tagline = document.createElement('p');
+    tagline.className = 'book-cover-tagline';
+    tagline.textContent = 'Every voice, every wish — kept here';
+
+    const uploadWrap = document.createElement('div');
+    uploadWrap.className = 'book-cover-upload';
+    const uploadBtn = document.createElement('button');
+    uploadBtn.type = 'button';
+    uploadBtn.className = 'btn-text';
+    uploadBtn.style.width = 'auto';
+    uploadBtn.textContent = currentEvent.cover_photo_path ? 'Change cover photo' : 'Add a cover photo';
+
+    const fileInput = document.createElement('input');
+    fileInput.type = 'file';
+    fileInput.accept = 'image/*';
+    fileInput.style.display = 'none';
+
+    uploadBtn.addEventListener('click', function(){ fileInput.click(); });
+
+    fileInput.addEventListener('change', async function(){
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      uploadBtn.textContent = 'Uploading…';
+      const ext = (file.name.split('.').pop() || 'jpg').toLowerCase();
+      const path = `${currentEvent.id}/cover.${ext}`;
+
+      const { error: uploadError } = await supabaseClient
+        .storage
+        .from('ag-covers')
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      if (uploadError){
+        window.alert('Could not upload photo: ' + uploadError.message);
+        uploadBtn.textContent = 'Add a cover photo';
+        return;
+      }
+
+      await supabaseClient
+        .from('ag_events')
+        .update({ cover_photo_path: path })
+        .eq('id', currentEvent.id);
+
+      currentEvent.cover_photo_path = path;
+      renderCoverPage();
+    });
+
+    uploadWrap.appendChild(uploadBtn);
+    uploadWrap.appendChild(fileInput);
+
+    pageFrame.appendChild(title);
+    pageFrame.appendChild(tagline);
+    pageFrame.appendChild(uploadWrap);
+  }
+
+  function renderMessagePage(m){
+    pageFrame.innerHTML = '';
+
+    if (m.message_text){
+      const quote = document.createElement('p');
+      quote.className = 'book-page-quote';
+      quote.textContent = m.message_text;
+      pageFrame.appendChild(quote);
+    } else if (m.audio_path){
+      const audioWrap = document.createElement('div');
+      audioWrap.className = 'book-page-audio';
+      const audioEl = document.createElement('audio');
+      audioEl.controls = true;
+      audioEl.src = STORAGE_BASE + m.audio_path;
+      audioWrap.appendChild(audioEl);
+      pageFrame.appendChild(audioWrap);
+    }
+
+    const sig = document.createElement('p');
+    sig.className = 'book-page-sig';
+    sig.textContent = m.guest_name;
+
+    const time = document.createElement('span');
+    time.className = 'book-page-time';
+    time.textContent = new Date(m.created_at).toLocaleString();
+
+    pageFrame.appendChild(sig);
+    pageFrame.appendChild(time);
+  }
+
+  function renderEmptyMessagesPage(){
+    pageFrame.innerHTML = '';
+    const p = document.createElement('p');
+    p.className = 'subtext';
+    p.style.margin = '0';
+    p.textContent = 'No messages yet — share your guest link to start collecting voices and wishes.';
+    pageFrame.appendChild(p);
+  }
+
+  function renderPage(){
+    const page = pages[pageIndex];
+    if (page.type === 'cover'){
+      renderCoverPage();
+    } else if (page.type === 'empty'){
+      renderEmptyMessagesPage();
+    } else {
+      renderMessagePage(page.data);
+    }
+    prevPageBtn.disabled = pageIndex === 0;
+    nextPageBtn.disabled = pageIndex === pages.length - 1;
+    pageCounter.textContent = `Page ${pageIndex + 1} of ${pages.length}`;
+  }
+
+  prevPageBtn.addEventListener('click', function(){
+    if (pageIndex > 0){ pageIndex--; renderPage(); }
+  });
+  nextPageBtn.addEventListener('click', function(){
+    if (pageIndex < pages.length - 1){ pageIndex++; renderPage(); }
   });
 
   async function init(){
@@ -61,7 +210,7 @@
 
     const { data: event, error: eventError } = await supabaseClient
       .from('ag_events')
-      .select('id, couple_name, slug, created_at, status')
+      .select('id, couple_name, slug, created_at, status, cover_photo_path')
       .eq('owner_id', session.user.id)
       .single();
 
@@ -72,6 +221,7 @@
       return;
     }
 
+    currentEvent = event;
     eventTitle.textContent = event.couple_name;
     eventMeta.textContent = 'Created ' + new Date(event.created_at).toLocaleDateString();
 
@@ -102,44 +252,16 @@
       return;
     }
 
-    if (!messages || messages.length === 0){
-      statusText.textContent = 'No messages yet — share your guest link to start collecting voice messages.';
-      return;
+    pages = [{ type: 'cover' }];
+    if (messages && messages.length > 0){
+      messages.forEach(function(m){ pages.push({ type: 'message', data: m }); });
+    } else {
+      pages.push({ type: 'empty' });
     }
 
-    messages.forEach(function(m){
-      const page = document.createElement('div');
-      page.className = 'note-page';
-
-      if (m.message_text){
-        const quote = document.createElement('p');
-        quote.className = 'note-page-quote';
-        quote.textContent = m.message_text;
-        page.appendChild(quote);
-      } else if (m.audio_path){
-        const audioWrap = document.createElement('div');
-        audioWrap.className = 'note-page-audio';
-        const audioEl = document.createElement('audio');
-        audioEl.controls = true;
-        audioEl.src = STORAGE_BASE + m.audio_path;
-        audioWrap.appendChild(audioEl);
-        page.appendChild(audioWrap);
-      }
-
-      const time = document.createElement('span');
-      time.className = 'note-page-time';
-      time.textContent = new Date(m.created_at).toLocaleString();
-
-      const sig = document.createElement('span');
-      sig.className = 'note-page-sig';
-      sig.textContent = m.guest_name;
-
-      page.appendChild(time);
-      page.appendChild(sig);
-      bookGrid.appendChild(page);
-    });
-
-    bookGrid.hidden = false;
+    pageIndex = 0;
+    bookViewer.hidden = false;
+    renderPage();
   }
 
   init();
