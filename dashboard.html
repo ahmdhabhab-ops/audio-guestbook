@@ -195,6 +195,28 @@
     uploadWrap.appendChild(uploadBtn);
     uploadWrap.appendChild(fileInput);
 
+    if (currentEvent.cover_photo_path){
+      const removeBtn = document.createElement('button');
+      removeBtn.type = 'button';
+      removeBtn.textContent = 'Remove cover photo';
+      removeBtn.style.marginLeft = '10px';
+      removeBtn.addEventListener('click', async function(){
+        if (!window.confirm('Remove the cover photo?')) return;
+        removeBtn.textContent = 'Removing…';
+
+        await supabaseClient.storage.from('ag-recordings').remove([currentEvent.cover_photo_path]);
+        await supabaseClient
+          .from('ag_events')
+          .update({ cover_photo_path: null })
+          .eq('id', currentEvent.id);
+
+        currentEvent.cover_photo_path = null;
+        renderCoverPage(pageFront);
+        renderCoverPage(pageBack);
+      });
+      uploadWrap.appendChild(removeBtn);
+    }
+
     inner.appendChild(title);
     inner.appendChild(divider);
     inner.appendChild(names);
