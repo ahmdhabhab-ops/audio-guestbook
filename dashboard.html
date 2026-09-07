@@ -26,6 +26,7 @@
     </div>
 
     <p class="status" id="pendingBanner" hidden>Your guestbook is pending admin approval. Guests can't record messages yet — you'll be notified once it's approved.</p>
+    <p class="status error" id="frozenBanner" hidden>❄ Your guestbook has been paused by the admin. Guests can't leave new messages right now.</p>
     <p class="status" id="statusText"></p>
 
     <div class="mode-tabs" id="dashTabs">
@@ -62,6 +63,7 @@
   const copyBtn = document.getElementById('copyBtn');
   const statusText = document.getElementById('statusText');
   const pendingBanner = document.getElementById('pendingBanner');
+  const frozenBanner = document.getElementById('frozenBanner');
   const voiceTabBtn = document.getElementById('voiceTabBtn');
   const bookTabBtn = document.getElementById('bookTabBtn');
   const voicePane = document.getElementById('voicePane');
@@ -82,6 +84,16 @@
   let currentEvent = null;
   let pages = []; // [{ type:'cover' }, { type:'message', data: m }, ...] — written wishes only
   let pageIndex = 0;
+
+  async function deleteMessage(id){
+    if (!window.confirm('Delete this message? This can\'t be undone.')) return;
+    const { error } = await supabaseClient.from('ag_messages').delete().eq('id', id);
+    if (error){
+      window.alert('Could not delete: ' + error.message);
+      return;
+    }
+    init();
+  }
 
   logoutBtn.addEventListener('click', async function(){
     await supabaseClient.auth.signOut();
@@ -224,6 +236,17 @@
     right.appendChild(sig);
     right.appendChild(time);
 
+    const deleteBtn = document.createElement('button');
+    deleteBtn.type = 'button';
+    deleteBtn.className = 'btn-text';
+    deleteBtn.style.width = 'auto';
+    deleteBtn.style.fontSize = '0.75rem';
+    deleteBtn.style.color = 'var(--danger)';
+    deleteBtn.style.marginTop = '4px';
+    deleteBtn.textContent = 'Delete this message';
+    deleteBtn.addEventListener('click', function(){ deleteMessage(m.id); });
+    right.appendChild(deleteBtn);
+
     spread.appendChild(left);
     spread.appendChild(right);
     container.appendChild(spread);
@@ -320,7 +343,7 @@
 
     const { data: event, error: eventError } = await supabaseClient
       .from('ag_events')
-      .select('id, couple_name, slug, created_at, status, cover_photo_path')
+      .select('id, couple_name, slug, created_at, status, frozen, cover_photo_path')
       .eq('owner_id', session.user.id)
       .single();
 
@@ -338,6 +361,9 @@
     if (event.status !== 'approved'){
       pendingBanner.hidden = false;
     }
+    if (event.frozen){
+      frozenBanner.hidden = false;
+    }
 
     const guestUrl = `${location.origin}${location.pathname.replace('dashboard.html','')}guest.html?event=${event.slug}`;
     guestLinkEl.textContent = guestUrl;
@@ -352,7 +378,7 @@
 
     const { data: messages, error: messagesError } = await supabaseClient
       .from('ag_messages')
-      .select('guest_name, audio_path, message_text, created_at')
+      .select('id, guest_name, audio_path, message_text, created_at')
       .eq('event_id', event.id)
       .order('created_at', { ascending: false });
 
@@ -389,8 +415,18 @@
         audioEl.controls = true;
         audioEl.src = STORAGE_BASE + m.audio_path;
 
+        const deleteBtn = document.createElement('button');
+        deleteBtn.type = 'button';
+        deleteBtn.className = 'btn-text';
+        deleteBtn.style.width = 'auto';
+        deleteBtn.style.fontSize = '0.78rem';
+        deleteBtn.style.color = 'var(--danger)';
+        deleteBtn.textContent = 'Delete';
+        deleteBtn.addEventListener('click', function(){ deleteMessage(m.id); });
+
         row.appendChild(who);
         row.appendChild(audioEl);
+        row.appendChild(deleteBtn);
         voiceList.appendChild(row);
       });
     } else {
