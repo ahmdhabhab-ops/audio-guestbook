@@ -41,7 +41,10 @@
     <div id="bookPane" hidden>
       <div class="book-viewer" id="bookViewer">
         <button type="button" class="book-nav" id="prevPageBtn" aria-label="Previous page">‹</button>
-        <div class="book-page-frame" id="pageFrame"></div>
+        <div class="book-page-frame" id="pageFrame">
+          <div class="book-page-layer book-page-back" id="pageBack"></div>
+          <div class="book-page-layer book-page-front" id="pageFront"></div>
+        </div>
         <button type="button" class="book-nav" id="nextPageBtn" aria-label="Next page">›</button>
       </div>
       <p class="book-page-counter" id="pageCounter"></p>
@@ -66,7 +69,8 @@
   const voiceList = document.getElementById('voiceList');
   const voiceEmptyText = document.getElementById('voiceEmptyText');
   const bookViewer = document.getElementById('bookViewer');
-  const pageFrame = document.getElementById('pageFrame');
+  const pageBack = document.getElementById('pageBack');
+  const pageFront = document.getElementById('pageFront');
   const prevPageBtn = document.getElementById('prevPageBtn');
   const nextPageBtn = document.getElementById('nextPageBtn');
   const pageCounter = document.getElementById('pageCounter');
@@ -97,8 +101,8 @@
     voicePane.hidden = true;
   });
 
-  function renderCoverPage(){
-    pageFrame.innerHTML = '';
+  function renderCoverPage(container){
+    container.innerHTML = '';
 
     const cover = document.createElement('div');
     cover.className = 'book-cover-page';
@@ -172,7 +176,8 @@
         .eq('id', currentEvent.id);
 
       currentEvent.cover_photo_path = path;
-      renderCoverPage();
+      renderCoverPage(pageFront);
+      renderCoverPage(pageBack);
     });
 
     uploadWrap.appendChild(uploadBtn);
@@ -184,11 +189,11 @@
     inner.appendChild(date);
     inner.appendChild(uploadWrap);
     cover.appendChild(inner);
-    pageFrame.appendChild(cover);
+    container.appendChild(cover);
   }
 
-  function renderMessagePage(m){
-    pageFrame.innerHTML = '';
+  function renderMessagePage(container, m){
+    container.innerHTML = '';
 
     const spread = document.createElement('div');
     spread.className = 'book-spread';
@@ -221,11 +226,11 @@
 
     spread.appendChild(left);
     spread.appendChild(right);
-    pageFrame.appendChild(spread);
+    container.appendChild(spread);
   }
 
-  function renderEmptyMessagesPage(){
-    pageFrame.innerHTML = '';
+  function renderEmptyMessagesPage(container){
+    container.innerHTML = '';
 
     const spread = document.createElement('div');
     spread.className = 'book-spread';
@@ -247,33 +252,63 @@
 
     spread.appendChild(left);
     spread.appendChild(right);
-    pageFrame.appendChild(spread);
+    container.appendChild(spread);
   }
 
-  function renderPage(direction){
-    const page = pages[pageIndex];
+  function fillLayer(container, page){
     if (page.type === 'cover'){
-      renderCoverPage();
+      renderCoverPage(container);
     } else if (page.type === 'empty'){
-      renderEmptyMessagesPage();
+      renderEmptyMessagesPage(container);
     } else {
-      renderMessagePage(page.data);
+      renderMessagePage(container, page.data);
     }
+  }
+
+  function updateChrome(){
     prevPageBtn.disabled = pageIndex === 0;
     nextPageBtn.disabled = pageIndex === pages.length - 1;
     pageCounter.textContent = `~ ${pageIndex + 1} of ${pages.length} ~`;
+  }
 
-    pageFrame.classList.remove('turn-next', 'turn-prev');
-    void pageFrame.offsetWidth;
-    if (direction === 'next') pageFrame.classList.add('turn-next');
-    if (direction === 'prev') pageFrame.classList.add('turn-prev');
+  let flipping = false;
+
+  function goToPage(newIndex, direction){
+    if (flipping || newIndex < 0 || newIndex >= pages.length) return;
+    flipping = true;
+
+    fillLayer(pageBack, pages[newIndex]);
+
+    pageFront.style.transition = 'none';
+    pageFront.classList.remove('flipping-next', 'flipping-prev');
+    void pageFront.offsetWidth;
+    pageFront.style.transition = '';
+
+    requestAnimationFrame(function(){
+      pageFront.classList.add(direction === 'prev' ? 'flipping-prev' : 'flipping-next');
+    });
+
+    pageFront.addEventListener('transitionend', function handler(e){
+      if (e.propertyName !== 'transform') return;
+      pageFront.removeEventListener('transitionend', handler);
+
+      pageFront.style.transition = 'none';
+      pageFront.classList.remove('flipping-next', 'flipping-prev');
+      fillLayer(pageFront, pages[newIndex]);
+      void pageFront.offsetWidth;
+      pageFront.style.transition = '';
+
+      pageIndex = newIndex;
+      updateChrome();
+      flipping = false;
+    }, { once: true });
   }
 
   prevPageBtn.addEventListener('click', function(){
-    if (pageIndex > 0){ pageIndex--; renderPage('prev'); }
+    goToPage(pageIndex - 1, 'prev');
   });
   nextPageBtn.addEventListener('click', function(){
-    if (pageIndex < pages.length - 1){ pageIndex++; renderPage('next'); }
+    goToPage(pageIndex + 1, 'next');
   });
 
   async function init(){
@@ -369,7 +404,9 @@
     }
 
     pageIndex = 0;
-    renderPage();
+    fillLayer(pageBack, pages[0]);
+    fillLayer(pageFront, pages[0]);
+    updateChrome();
   }
 
   init();
