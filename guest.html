@@ -97,6 +97,27 @@
   }
   .playback-label{ font-size: 0.8rem; color: var(--ink); opacity: 0.55; margin:0; }
   audio{ width: 100%; max-width: 300px; }
+
+  .mode-tabs{
+    display:flex; gap:6px; background: var(--ivory); border: 1px solid var(--line);
+    border-radius: 999px; padding: 4px; margin: 26px auto 0; max-width: 280px;
+  }
+  .mode-tab{
+    flex:1; font-family:'Manrope', sans-serif; font-weight:600; font-size:0.85rem;
+    padding: 9px 10px; border-radius: 999px; border:none; background:none; color: var(--ink);
+    opacity:0.55; cursor:pointer; transition: background .2s ease, opacity .2s ease, color .2s ease;
+  }
+  .mode-tab.active{ background: var(--card); opacity:1; color: var(--plum-deep); box-shadow: 0 2px 6px rgba(76,53,73,0.08); }
+
+  .note-field{ text-align:left; margin: 28px 0 0; }
+  .note-textarea{
+    width:100%; font-family:'Fraunces', serif; font-style:italic; font-size: 1rem; line-height:1.5;
+    padding: 16px; min-height: 130px; border-radius: 16px; border: 1px solid var(--line);
+    background: var(--ivory); color: var(--ink); outline:none; resize: vertical;
+    transition: border-color .2s ease;
+  }
+  .note-textarea:focus{ border-color: var(--plum); }
+  .note-count{ font-size:0.72rem; color: var(--ink); opacity:0.45; text-align:right; margin: 4px 2px 0; }
   *:focus-visible{ outline: 2px solid var(--plum); outline-offset: 3px; border-radius: 4px; }
   @media (max-width: 420px){
     .card{ padding: 40px 22px 32px; }
@@ -142,40 +163,57 @@
       <input type="text" id="guestName" class="field-input" placeholder="e.g. Karim" autocomplete="name">
     </div>
 
-    <div class="recorder" id="recorder">
-      <div class="rings" aria-hidden="true"><span></span><span></span></div>
-      <div class="mic-circle">
-        <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5">
-          <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
-          <path d="M6.5 11.5V12a5.5 5.5 0 0 0 11 0v-.5"/>
-          <path d="M12 17.5V21"/>
-        </svg>
-      </div>
-      <div class="timer" id="timer" aria-live="polite">00:00</div>
+    <div class="mode-tabs" id="modeTabs">
+      <button type="button" class="mode-tab active" id="voiceTabBtn">🎙 Voice message</button>
+      <button type="button" class="mode-tab" id="writeTabBtn">✍️ Write instead</button>
     </div>
 
-    <div class="controls">
-      <button id="startBtn" class="btn btn-primary" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
-          <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
-          <path d="M6.5 11.5V12a5.5 5.5 0 0 0 11 0v-.5"/>
-          <path d="M12 17.5V21"/>
-        </svg>
-        Start Recording
-      </button>
-      <button id="stopBtn" class="btn btn-outline" type="button" disabled>
-        <svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
-        Stop Recording
-      </button>
+    <div id="voiceMode">
+      <div class="recorder" id="recorder">
+        <div class="rings" aria-hidden="true"><span></span><span></span></div>
+        <div class="mic-circle">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="1.5">
+            <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
+            <path d="M6.5 11.5V12a5.5 5.5 0 0 0 11 0v-.5"/>
+            <path d="M12 17.5V21"/>
+          </svg>
+        </div>
+        <div class="timer" id="timer" aria-live="polite">00:00</div>
+      </div>
+
+      <div class="controls">
+        <button id="startBtn" class="btn btn-primary" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+            <path d="M12 15a3 3 0 0 0 3-3V6a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3Z"/>
+            <path d="M6.5 11.5V12a5.5 5.5 0 0 0 11 0v-.5"/>
+            <path d="M12 17.5V21"/>
+          </svg>
+          Start Recording
+        </button>
+        <button id="stopBtn" class="btn btn-outline" type="button" disabled>
+          <svg viewBox="0 0 24 24" fill="currentColor"><rect x="7" y="7" width="10" height="10" rx="1.5"/></svg>
+          Stop Recording
+        </button>
+      </div>
+
+      <div class="playback" id="playback" hidden>
+        <p class="playback-label">Your message</p>
+        <audio id="audioPlayback" controls></audio>
+        <button id="rerecordBtn" class="btn btn-text" type="button">Record again</button>
+      </div>
+    </div>
+
+    <div id="writeMode" hidden>
+      <div class="note-field">
+        <textarea id="noteText" class="note-textarea" maxlength="600" placeholder="Write your wishes here…"></textarea>
+        <p class="note-count"><span id="noteCharCount">0</span>/600</p>
+      </div>
+      <div class="controls" style="margin-top:14px;">
+        <button id="submitNoteBtn" class="btn btn-primary" type="button">Send message</button>
+      </div>
     </div>
 
     <p class="status" id="statusText" aria-live="polite">Loading this guestbook…</p>
-
-    <div class="playback" id="playback" hidden>
-      <p class="playback-label">Your message</p>
-      <audio id="audioPlayback" controls></audio>
-      <button id="rerecordBtn" class="btn btn-text" type="button">Record again</button>
-    </div>
 
   </main>
 
@@ -193,6 +231,13 @@
   const audioPlayback = document.getElementById('audioPlayback');
   const guestNameInput = document.getElementById('guestName');
   const eventNameEl = document.getElementById('eventName');
+  const voiceTabBtn = document.getElementById('voiceTabBtn');
+  const writeTabBtn = document.getElementById('writeTabBtn');
+  const voiceMode = document.getElementById('voiceMode');
+  const writeMode = document.getElementById('writeMode');
+  const noteText = document.getElementById('noteText');
+  const noteCharCount = document.getElementById('noteCharCount');
+  const submitNoteBtn = document.getElementById('submitNoteBtn');
 
   let mediaRecorder = null;
   let audioChunks = [];
@@ -210,6 +255,68 @@
   function supportsRecording(){
     return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && window.MediaRecorder);
   }
+
+  voiceTabBtn.addEventListener('click', function(){
+    voiceTabBtn.classList.add('active');
+    writeTabBtn.classList.remove('active');
+    voiceMode.hidden = false;
+    writeMode.hidden = true;
+  });
+
+  writeTabBtn.addEventListener('click', function(){
+    writeTabBtn.classList.add('active');
+    voiceTabBtn.classList.remove('active');
+    writeMode.hidden = false;
+    voiceMode.hidden = true;
+  });
+
+  noteText.addEventListener('input', function(){
+    noteCharCount.textContent = noteText.value.length;
+  });
+
+  submitNoteBtn.addEventListener('click', async function(){
+    if (!currentEvent) return;
+
+    if (!guestNameInput.value.trim()){
+      statusText.className = 'status error';
+      statusText.textContent = 'Please add your name first, so we know who left the message.';
+      guestNameInput.focus();
+      return;
+    }
+
+    const noteValue = noteText.value.trim();
+    if (!noteValue){
+      statusText.className = 'status error';
+      statusText.textContent = 'Please write a short message before sending.';
+      noteText.focus();
+      return;
+    }
+
+    submitNoteBtn.disabled = true;
+    statusText.className = 'status';
+    statusText.textContent = 'Sending your message…';
+
+    const { error: insertError } = await supabaseClient
+      .from('ag_messages')
+      .insert({
+        event_id: currentEvent.id,
+        guest_name: guestNameInput.value.trim() || 'A guest',
+        message_text: noteValue
+      });
+
+    submitNoteBtn.disabled = false;
+
+    if (insertError){
+      statusText.className = 'status error';
+      statusText.textContent = 'We could not save your message. Please try again.';
+      return;
+    }
+
+    noteText.value = '';
+    noteCharCount.textContent = '0';
+    statusText.className = 'status success';
+    statusText.textContent = 'Message sent — thank you!';
+  });
 
   function pickMimeType(){
     if (!window.MediaRecorder || !MediaRecorder.isTypeSupported) return '';
@@ -229,6 +336,10 @@
   function disableForm(message){
     startBtn.disabled = true;
     guestNameInput.disabled = true;
+    submitNoteBtn.disabled = true;
+    noteText.disabled = true;
+    voiceTabBtn.disabled = true;
+    writeTabBtn.disabled = true;
     statusText.className = 'status error';
     statusText.textContent = message;
   }
@@ -264,7 +375,10 @@
     }
 
     if (!supportsRecording()){
-      disableForm("Audio recording isn't supported in this browser. Try a recent version of Chrome, Safari, or Firefox.");
+      startBtn.disabled = true;
+      statusText.className = 'status';
+      statusText.textContent = "Voice recording isn't supported in this browser — you can still write a message below.";
+      writeTabBtn.click();
       return;
     }
 
