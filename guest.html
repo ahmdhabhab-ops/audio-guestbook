@@ -356,7 +356,7 @@
 
     const { data, error } = await supabaseClient
       .from('ag_events')
-      .select('id, couple_name, slug, status')
+      .select('id, couple_name, slug, status, frozen')
       .eq('slug', slug)
       .single();
 
@@ -371,6 +371,11 @@
 
     if (data.status !== 'approved'){
       disableForm("This guestbook isn't active yet. Please check back soon, or contact the couple.");
+      return;
+    }
+
+    if (data.frozen){
+      disableForm("This guestbook is currently paused. Please check back later.");
       return;
     }
 
