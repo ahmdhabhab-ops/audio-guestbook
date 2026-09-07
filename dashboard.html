@@ -180,10 +180,32 @@
     pageFrame.appendChild(p);
   }
 
-  function renderPage(){
+  function renderSectionPage(page){
+    pageFrame.innerHTML = '';
+
+    const icon = document.createElement('div');
+    icon.className = 'book-section-icon';
+    icon.textContent = page.icon || '';
+
+    const title = document.createElement('p');
+    title.className = 'book-section-title';
+    title.textContent = page.title.replace(/^[^\w]+\s*/, '');
+
+    const ornament = document.createElement('div');
+    ornament.className = 'ornament';
+    ornament.innerHTML = '<svg viewBox="0 0 64 8" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="4" x2="26" y2="4" stroke="#B98B4E" stroke-width="1"/><circle cx="32" cy="4" r="2.5" fill="#B98B4E"/><line x1="38" y1="4" x2="64" y2="4" stroke="#B98B4E" stroke-width="1"/></svg>';
+
+    pageFrame.appendChild(icon);
+    pageFrame.appendChild(title);
+    pageFrame.appendChild(ornament);
+  }
+
+  function renderPage(direction){
     const page = pages[pageIndex];
     if (page.type === 'cover'){
       renderCoverPage();
+    } else if (page.type === 'section'){
+      renderSectionPage(page);
     } else if (page.type === 'empty'){
       renderEmptyMessagesPage();
     } else {
@@ -191,14 +213,19 @@
     }
     prevPageBtn.disabled = pageIndex === 0;
     nextPageBtn.disabled = pageIndex === pages.length - 1;
-    pageCounter.textContent = `Page ${pageIndex + 1} of ${pages.length}`;
+    pageCounter.textContent = `~ ${pageIndex + 1} of ${pages.length} ~`;
+
+    pageFrame.classList.remove('turn-next', 'turn-prev');
+    void pageFrame.offsetWidth;
+    if (direction === 'next') pageFrame.classList.add('turn-next');
+    if (direction === 'prev') pageFrame.classList.add('turn-prev');
   }
 
   prevPageBtn.addEventListener('click', function(){
-    if (pageIndex > 0){ pageIndex--; renderPage(); }
+    if (pageIndex > 0){ pageIndex--; renderPage('prev'); }
   });
   nextPageBtn.addEventListener('click', function(){
-    if (pageIndex < pages.length - 1){ pageIndex++; renderPage(); }
+    if (pageIndex < pages.length - 1){ pageIndex++; renderPage('next'); }
   });
 
   async function init(){
@@ -253,9 +280,20 @@
     }
 
     pages = [{ type: 'cover' }];
-    if (messages && messages.length > 0){
-      messages.forEach(function(m){ pages.push({ type: 'message', data: m }); });
-    } else {
+    const voiceMessages = (messages || []).filter(function(m){ return m.audio_path; });
+    const textMessages = (messages || []).filter(function(m){ return m.message_text; });
+
+    if (voiceMessages.length > 0){
+      pages.push({ type: 'section', title: '🎙 Voice Messages', icon: '🎙' });
+      voiceMessages.forEach(function(m){ pages.push({ type: 'message', data: m }); });
+    }
+
+    if (textMessages.length > 0){
+      pages.push({ type: 'section', title: '✍️ Written Wishes', icon: '✍️' });
+      textMessages.forEach(function(m){ pages.push({ type: 'message', data: m }); });
+    }
+
+    if (voiceMessages.length === 0 && textMessages.length === 0){
       pages.push({ type: 'empty' });
     }
 
