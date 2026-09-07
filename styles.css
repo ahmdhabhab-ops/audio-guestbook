@@ -302,23 +302,57 @@ table.data-table audio{ height:32px; max-width:220px; }
 
 .book-page-frame{
   flex:1;
-  min-height: 320px;
-  background: var(--card);
-  border: 1px solid var(--line);
-  border-radius: 18px;
-  box-shadow: 0 18px 40px rgba(76, 53, 73, 0.10);
-  padding: 32px 28px;
+  min-height: 340px;
+  position: relative;
+  background: #FFFDF7;
+  border-radius: 3px 20px 20px 3px;
+  padding: 36px 32px 36px 52px;
   display:flex;
   flex-direction:column;
   align-items:center;
   justify-content:center;
   text-align:center;
   gap: 12px;
-  animation: pageIn .25s ease;
+  box-shadow:
+    0 18px 40px rgba(76, 53, 73, 0.14),
+    8px 10px 0 -4px var(--ivory),
+    8px 10px 1px -4px var(--line),
+    15px 18px 0 -8px var(--ivory),
+    15px 18px 1px -8px var(--line);
 }
-@keyframes pageIn{
-  from{ opacity:0; transform: translateX(8px); }
-  to{ opacity:1; transform: translateX(0); }
+.book-page-frame::before{
+  content: "";
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 16px;
+  border-radius: 3px 0 0 3px;
+  background: linear-gradient(180deg, var(--plum), var(--plum-deep));
+}
+.book-page-frame::after{
+  content: "";
+  position: absolute;
+  left: 16px; top: 0; bottom: 0;
+  width: 10px;
+  background: linear-gradient(90deg, rgba(76,53,73,0.10), transparent);
+}
+@keyframes pageTurnNext{
+  from{ opacity:0; transform: rotateY(-6deg) translateX(14px); }
+  to{ opacity:1; transform: rotateY(0) translateX(0); }
+}
+@keyframes pageTurnPrev{
+  from{ opacity:0; transform: rotateY(6deg) translateX(-14px); }
+  to{ opacity:1; transform: rotateY(0) translateX(0); }
+}
+.book-page-frame.turn-next{ animation: pageTurnNext .3s ease; transform-origin: left center; }
+.book-page-frame.turn-prev{ animation: pageTurnPrev .3s ease; transform-origin: right center; }
+
+.book-section-icon{ font-size: 2.2rem; }
+.book-section-title{
+  font-family:'Fraunces', serif;
+  font-weight:600;
+  font-size: 1.4rem;
+  color: var(--plum-deep);
+  margin: 0;
 }
 
 .book-page-counter{
@@ -393,7 +427,7 @@ table.data-table audio{ height:32px; max-width:220px; }
 }
 
 @media (max-width: 480px){
-  .book-page-frame{ padding: 24px 16px; min-height: 280px; }
+  .book-page-frame{ padding: 24px 16px 24px 36px; min-height: 280px; }
   .book-nav{ width: 34px; height: 34px; font-size: 1rem; }
 }
 
