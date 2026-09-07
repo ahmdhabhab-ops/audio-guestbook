@@ -137,6 +137,36 @@
     init();
   }
 
+  async function setFrozen(eventId, frozen){
+    const { error } = await supabaseClient
+      .from('ag_events')
+      .update({ frozen: frozen })
+      .eq('id', eventId);
+
+    if (error){
+      window.alert('Could not update: ' + error.message);
+      return;
+    }
+
+    init();
+  }
+
+  async function deleteEvent(eventId, coupleName){
+    if (!window.confirm(`Delete "${coupleName}" and all of their messages? This can't be undone.`)) return;
+
+    const { error } = await supabaseClient
+      .from('ag_events')
+      .delete()
+      .eq('id', eventId);
+
+    if (error){
+      window.alert('Could not delete: ' + error.message);
+      return;
+    }
+
+    init();
+  }
+
   function renderCoverLayer(container, ev){
     container.innerHTML = '';
     const cover = document.createElement('div');
@@ -366,10 +396,7 @@
     adminsCard.hidden = false;
     loadAdmins(session.user.id);
 
-    const { data: events, error: eventsError } = await supabaseClient
-      .from('ag_events')
-      .select('id, couple_name, slug, created_at, status, cover_photo_path')
-      .order('created_at', { ascending: false });
+    const { data: events, error: eventsError } = await supabaseClient.rpc('list_events_for_admin');
 
     if (eventsError){
       statusText.className = 'status error';
@@ -421,13 +448,20 @@
       header.appendChild(title);
       header.appendChild(badge);
 
+      if (ev.frozen){
+        const frozenBadge = document.createElement('span');
+        frozenBadge.className = 'status-pill rejected';
+        frozenBadge.textContent = '❄ frozen';
+        header.appendChild(frozenBadge);
+      }
+
       const msgs = messagesByEvent[ev.id] || [];
       const voiceMessages = msgs.filter(function(m){ return m.audio_path; });
       const textMessages = msgs.filter(function(m){ return m.message_text; });
 
       const meta = document.createElement('p');
       meta.className = 'client-card-meta';
-      meta.textContent = `/${ev.slug} · ${msgs.length} message${msgs.length === 1 ? '' : 's'} · created ${new Date(ev.created_at).toLocaleDateString()}`;
+      meta.textContent = `${ev.owner_email} · /${ev.slug} · ${msgs.length} message${msgs.length === 1 ? '' : 's'} · created ${new Date(ev.created_at).toLocaleDateString()}`;
 
       const actions = document.createElement('div');
       actions.className = 'client-actions';
@@ -449,6 +483,20 @@
         rejectBtn.addEventListener('click', function(){ setStatus(ev.id, 'rejected'); });
         actions.appendChild(rejectBtn);
       }
+
+      const freezeBtn = document.createElement('button');
+      freezeBtn.type = 'button';
+      freezeBtn.className = 'action-btn reject';
+      freezeBtn.textContent = ev.frozen ? 'Unfreeze' : 'Freeze';
+      freezeBtn.addEventListener('click', function(){ setFrozen(ev.id, !ev.frozen); });
+      actions.appendChild(freezeBtn);
+
+      const deleteBtn = document.createElement('button');
+      deleteBtn.type = 'button';
+      deleteBtn.className = 'action-btn reject';
+      deleteBtn.textContent = 'Delete';
+      deleteBtn.addEventListener('click', function(){ deleteEvent(ev.id, ev.couple_name); });
+      actions.appendChild(deleteBtn);
 
       card.appendChild(header);
       card.appendChild(meta);
