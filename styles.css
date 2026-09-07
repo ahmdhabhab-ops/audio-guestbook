@@ -313,38 +313,11 @@ table.data-table audio{ height:32px; max-width:220px; }
 
 .book-page-frame{
   flex:1;
-  min-height: 340px;
-  position: relative;
-  background: #FFFDF7;
-  border-radius: 3px 20px 20px 3px;
-  padding: 36px 32px 36px 52px;
+  min-height: 380px;
   display:flex;
-  flex-direction:column;
-  align-items:center;
-  justify-content:center;
-  text-align:center;
-  gap: 12px;
-  box-shadow:
-    0 18px 40px rgba(76, 53, 73, 0.14),
-    8px 10px 0 -4px var(--ivory),
-    8px 10px 1px -4px var(--line),
-    15px 18px 0 -8px var(--ivory),
-    15px 18px 1px -8px var(--line);
-}
-.book-page-frame::before{
-  content: "";
-  position: absolute;
-  left: 0; top: 0; bottom: 0;
-  width: 16px;
-  border-radius: 3px 0 0 3px;
-  background: linear-gradient(180deg, var(--plum), var(--plum-deep));
-}
-.book-page-frame::after{
-  content: "";
-  position: absolute;
-  left: 16px; top: 0; bottom: 0;
-  width: 10px;
-  background: linear-gradient(90deg, rgba(76,53,73,0.10), transparent);
+  border-radius: 16px;
+  overflow:hidden;
+  box-shadow: 0 18px 40px rgba(76, 53, 73, 0.16);
 }
 @keyframes pageTurnNext{
   from{ opacity:0; transform: rotateY(-6deg) translateX(14px); }
@@ -357,15 +330,6 @@ table.data-table audio{ height:32px; max-width:220px; }
 .book-page-frame.turn-next{ animation: pageTurnNext .3s ease; transform-origin: left center; }
 .book-page-frame.turn-prev{ animation: pageTurnPrev .3s ease; transform-origin: right center; }
 
-.book-section-icon{ font-size: 2.2rem; }
-.book-section-title{
-  font-family:'Fraunces', serif;
-  font-weight:600;
-  font-size: 1.4rem;
-  color: var(--plum-deep);
-  margin: 0;
-}
-
 .book-page-counter{
   text-align:center;
   font-size: 0.75rem;
@@ -374,56 +338,122 @@ table.data-table audio{ height:32px; max-width:220px; }
   margin: 10px 0 0;
 }
 
-/* Cover page */
-.book-cover-photo{
-  width: 150px;
-  height: 150px;
+/* Closed cover — one solid panel, like a real guestbook cover */
+.book-cover-page{
+  width:100%;
+  background: linear-gradient(160deg, var(--plum), var(--plum-deep));
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 14px;
+  padding: 20px;
+}
+.book-cover-page-inner{
+  width:100%;
+  height:100%;
+  border: 1.5px dashed rgba(255,255,255,0.35);
+  border-radius: 10px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap: 14px;
+  padding: 40px 28px;
+}
+.book-cover-page-photo{
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
   object-fit: cover;
-  border: 3px solid var(--card);
-  box-shadow: 0 8px 24px rgba(76, 53, 73, 0.18);
+  border: 2px solid rgba(255,255,255,0.5);
 }
-.book-cover-photo-placeholder{
-  width: 150px;
-  height: 150px;
+.book-cover-page-photo-placeholder{
+  width: 84px;
+  height: 84px;
   border-radius: 50%;
-  border: 1.5px dashed var(--gold-soft);
+  border: 1.5px dashed rgba(255,255,255,0.4);
   display:flex;
   align-items:center;
   justify-content:center;
-  color: var(--gold);
+  color: rgba(255,255,255,0.6);
+  font-size: 1.3rem;
 }
-.book-cover-title{
-  font-family:'Fraunces', serif;
-  font-weight:600;
-  font-size: 1.6rem;
-  color: var(--plum-deep);
-  margin: 6px 0 0;
-}
-.book-cover-tagline{
+.book-cover-page-title{
   font-family:'Fraunces', serif;
   font-style: italic;
-  font-size: 0.95rem;
-  color: var(--ink);
-  opacity: 0.6;
+  font-weight:600;
+  font-size: 1.5rem;
+  color: #fff;
   margin: 0;
 }
-.book-cover-upload{
-  margin-top: 10px;
+.book-cover-page-divider{
+  width: 56px;
+  height: 1px;
+  background: var(--gold-soft);
+}
+.book-cover-page-names{
+  font-family:'Fraunces', serif;
+  font-style: italic;
+  font-weight:500;
+  font-size: 1.3rem;
+  color: var(--gold-soft);
+  margin: 0;
+}
+.book-cover-page-date{
+  font-size: 0.72rem;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,0.65);
+}
+.book-cover-page-upload{ margin-top: 4px; }
+.book-cover-page-upload button{
+  background:none; border:none; cursor:pointer;
+  font-family:'Manrope', sans-serif; font-size: 0.75rem;
+  color: var(--gold-soft); text-decoration: underline; text-underline-offset: 3px;
 }
 
-/* Message page (inside the book frame) */
+/* Open spread — dark left panel + cream right page, like flipping the book open */
+.book-spread{
+  display:flex;
+  width:100%;
+}
+.book-spread-left{
+  flex: 0 0 34%;
+  background: linear-gradient(160deg, var(--plum), var(--plum-deep));
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
+.book-spread-left-mark{
+  font-family:'Fraunces', serif;
+  font-style: italic;
+  font-size: 2.4rem;
+  color: rgba(255,255,255,0.18);
+}
+.book-spread-right{
+  flex:1;
+  background: #FFFDF7;
+  padding: 34px 30px;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+  gap: 12px;
+}
+
+/* Message page content (inside the right page) */
 .book-page-quote{
   font-family:'Fraunces', serif;
   font-style: italic;
-  font-size: 1.25rem;
+  font-size: 1.2rem;
   line-height: 1.6;
   color: var(--ink);
   margin: 0;
 }
 .book-page-quote::before{ content: "“"; }
 .book-page-quote::after{ content: "”"; }
-.book-page-audio audio{ width: 100%; max-width: 320px; }
 .book-page-sig{
   font-family:'Fraunces', serif;
   font-weight:600;
@@ -438,8 +468,11 @@ table.data-table audio{ height:32px; max-width:220px; }
 }
 
 @media (max-width: 480px){
-  .book-page-frame{ padding: 24px 16px 24px 36px; min-height: 280px; }
+  .book-page-frame{ min-height: 320px; }
   .book-nav{ width: 34px; height: 34px; font-size: 1rem; }
+  .book-spread-left{ flex-basis: 18%; }
+  .book-spread-right{ padding: 26px 18px; }
+  .book-cover-page-inner{ padding: 30px 18px; }
 }
 
 .topbar{
