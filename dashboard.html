@@ -28,12 +28,24 @@
     <p class="status" id="pendingBanner" hidden>Your guestbook is pending admin approval. Guests can't record messages yet — you'll be notified once it's approved.</p>
     <p class="status" id="statusText"></p>
 
-    <div class="book-viewer" id="bookViewer" hidden>
-      <button type="button" class="book-nav" id="prevPageBtn" aria-label="Previous page">‹</button>
-      <div class="book-page-frame" id="pageFrame"></div>
-      <button type="button" class="book-nav" id="nextPageBtn" aria-label="Next page">›</button>
+    <div class="mode-tabs" id="dashTabs">
+      <button type="button" class="mode-tab active" id="voiceTabBtn">🎙 Voice Messages</button>
+      <button type="button" class="mode-tab" id="bookTabBtn">📖 Guestbook</button>
     </div>
-    <p class="book-page-counter" id="pageCounter"></p>
+
+    <div id="voicePane">
+      <div class="message-list" id="voiceList"></div>
+      <p class="status" id="voiceEmptyText" hidden>No voice messages yet.</p>
+    </div>
+
+    <div id="bookPane" hidden>
+      <div class="book-viewer" id="bookViewer">
+        <button type="button" class="book-nav" id="prevPageBtn" aria-label="Previous page">‹</button>
+        <div class="book-page-frame" id="pageFrame"></div>
+        <button type="button" class="book-nav" id="nextPageBtn" aria-label="Next page">›</button>
+      </div>
+      <p class="book-page-counter" id="pageCounter"></p>
+    </div>
   </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
@@ -47,6 +59,12 @@
   const copyBtn = document.getElementById('copyBtn');
   const statusText = document.getElementById('statusText');
   const pendingBanner = document.getElementById('pendingBanner');
+  const voiceTabBtn = document.getElementById('voiceTabBtn');
+  const bookTabBtn = document.getElementById('bookTabBtn');
+  const voicePane = document.getElementById('voicePane');
+  const bookPane = document.getElementById('bookPane');
+  const voiceList = document.getElementById('voiceList');
+  const voiceEmptyText = document.getElementById('voiceEmptyText');
   const bookViewer = document.getElementById('bookViewer');
   const pageFrame = document.getElementById('pageFrame');
   const prevPageBtn = document.getElementById('prevPageBtn');
@@ -58,12 +76,25 @@
   const COVER_BASE = 'https://dfcgqesfnqamsrzrlhri.supabase.co/storage/v1/object/public/ag-covers/';
 
   let currentEvent = null;
-  let pages = []; // [{ type:'cover' }, { type:'message', data: m }, ...]
+  let pages = []; // [{ type:'cover' }, { type:'message', data: m }, ...] — written wishes only
   let pageIndex = 0;
 
   logoutBtn.addEventListener('click', async function(){
     await supabaseClient.auth.signOut();
     location.href = 'login.html';
+  });
+
+  voiceTabBtn.addEventListener('click', function(){
+    voiceTabBtn.classList.add('active');
+    bookTabBtn.classList.remove('active');
+    voicePane.hidden = false;
+    bookPane.hidden = true;
+  });
+  bookTabBtn.addEventListener('click', function(){
+    bookTabBtn.classList.add('active');
+    voiceTabBtn.classList.remove('active');
+    bookPane.hidden = false;
+    voicePane.hidden = true;
   });
 
   function renderCoverPage(){
@@ -144,20 +175,10 @@
   function renderMessagePage(m){
     pageFrame.innerHTML = '';
 
-    if (m.message_text){
-      const quote = document.createElement('p');
-      quote.className = 'book-page-quote';
-      quote.textContent = m.message_text;
-      pageFrame.appendChild(quote);
-    } else if (m.audio_path){
-      const audioWrap = document.createElement('div');
-      audioWrap.className = 'book-page-audio';
-      const audioEl = document.createElement('audio');
-      audioEl.controls = true;
-      audioEl.src = STORAGE_BASE + m.audio_path;
-      audioWrap.appendChild(audioEl);
-      pageFrame.appendChild(audioWrap);
-    }
+    const quote = document.createElement('p');
+    quote.className = 'book-page-quote';
+    quote.textContent = m.message_text;
+    pageFrame.appendChild(quote);
 
     const sig = document.createElement('p');
     sig.className = 'book-page-sig';
@@ -176,36 +197,14 @@
     const p = document.createElement('p');
     p.className = 'subtext';
     p.style.margin = '0';
-    p.textContent = 'No messages yet — share your guest link to start collecting voices and wishes.';
+    p.textContent = 'No written wishes yet — share your guest link to start collecting them.';
     pageFrame.appendChild(p);
-  }
-
-  function renderSectionPage(page){
-    pageFrame.innerHTML = '';
-
-    const icon = document.createElement('div');
-    icon.className = 'book-section-icon';
-    icon.textContent = page.icon || '';
-
-    const title = document.createElement('p');
-    title.className = 'book-section-title';
-    title.textContent = page.title.replace(/^[^\w]+\s*/, '');
-
-    const ornament = document.createElement('div');
-    ornament.className = 'ornament';
-    ornament.innerHTML = '<svg viewBox="0 0 64 8" xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="4" x2="26" y2="4" stroke="#B98B4E" stroke-width="1"/><circle cx="32" cy="4" r="2.5" fill="#B98B4E"/><line x1="38" y1="4" x2="64" y2="4" stroke="#B98B4E" stroke-width="1"/></svg>';
-
-    pageFrame.appendChild(icon);
-    pageFrame.appendChild(title);
-    pageFrame.appendChild(ornament);
   }
 
   function renderPage(direction){
     const page = pages[pageIndex];
     if (page.type === 'cover'){
       renderCoverPage();
-    } else if (page.type === 'section'){
-      renderSectionPage(page);
     } else if (page.type === 'empty'){
       renderEmptyMessagesPage();
     } else {
@@ -284,21 +283,43 @@
     const textMessages = (messages || []).filter(function(m){ return m.message_text; });
 
     if (voiceMessages.length > 0){
-      pages.push({ type: 'section', title: '🎙 Voice Messages', icon: '🎙' });
-      voiceMessages.forEach(function(m){ pages.push({ type: 'message', data: m }); });
+      voiceMessages.forEach(function(m){
+        const row = document.createElement('div');
+        row.className = 'message-row';
+
+        const who = document.createElement('div');
+        who.className = 'message-who';
+
+        const nameEl = document.createElement('span');
+        nameEl.className = 'message-guest';
+        nameEl.textContent = m.guest_name;
+
+        const timeEl = document.createElement('span');
+        timeEl.className = 'message-time';
+        timeEl.textContent = new Date(m.created_at).toLocaleString();
+
+        who.appendChild(nameEl);
+        who.appendChild(timeEl);
+
+        const audioEl = document.createElement('audio');
+        audioEl.controls = true;
+        audioEl.src = STORAGE_BASE + m.audio_path;
+
+        row.appendChild(who);
+        row.appendChild(audioEl);
+        voiceList.appendChild(row);
+      });
+    } else {
+      voiceEmptyText.hidden = false;
     }
 
     if (textMessages.length > 0){
-      pages.push({ type: 'section', title: '✍️ Written Wishes', icon: '✍️' });
       textMessages.forEach(function(m){ pages.push({ type: 'message', data: m }); });
-    }
-
-    if (voiceMessages.length === 0 && textMessages.length === 0){
+    } else {
       pages.push({ type: 'empty' });
     }
 
     pageIndex = 0;
-    bookViewer.hidden = false;
     renderPage();
   }
 
